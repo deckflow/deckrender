@@ -4,7 +4,7 @@
  * result as a matrix.
  *
  * This drives the built CLI against the real backend, so it needs credentials
- * and costs quota. It is the ground truth behind contracts/render-matrix.md —
+ * and costs quota. It is the ground truth behind docs/formats.md —
  * run it when the route table changes.
  *
  *   pnpm build && node scripts/conformance.mjs

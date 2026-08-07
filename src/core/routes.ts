@@ -5,7 +5,7 @@ import type { RouteKind, SourceFormat, TargetFormat } from '../types.js';
  * The render matrix.
  *
  * Every entry here is backed by a task type that actually exists in
- * @deckops/sdk — see contracts/render-matrix.md for the line-by-line citations.
+ * @deckops/sdk — see docs/formats.md for the line-by-line citations.
  * Absence from this table is the single source of truth for
  * `unsupported_format`.
  */

@@ -145,7 +145,7 @@ function formatFromExtension(file: string): SourceFormat {
 
   if ((KNOWN_UNRENDERABLE_EXTENSIONS as readonly string[]).includes(ext)) {
     throw DeckRenderError.unsupportedFormat(`DeckOps has no renderer for ${ext} files.`, {
-      hint: 'See contracts/render-matrix.md for the supported input formats.',
+      hint: 'See docs/formats.md for the supported input formats.',
     });
   }
 

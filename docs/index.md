@@ -21,13 +21,3 @@ DeckRender is a pure render engine: document in, pixels out. It does not parse c
 | [Configuration](configuration.md) | Credentials, shared auth, render defaults                 |
 | [Errors](errors.md)               | Error codes and exit codes                                |
 | [Roadmap](roadmap.md)             | What is coming, and what is blocked upstream              |
-
-## Contracts
-
-Frozen promises that scripts and other tools depend on:
-
-|                                                     |                                                                     |
-| --------------------------------------------------- | ------------------------------------------------------------------- |
-| [`cli-output.md`](../contracts/cli-output.md)       | stdout/stderr split, `--json` envelope, exit codes, artifact layout |
-| [`render-matrix.md`](../contracts/render-matrix.md) | The full support matrix with citations into `@deckops/sdk`          |
-| [`credentials.md`](../contracts/credentials.md)     | The shared DeckFlow credential file format                          |

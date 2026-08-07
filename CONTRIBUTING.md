@@ -40,7 +40,7 @@ The pipeline runs `resolve → plan → execute → write`. Everything except `e
 
 ## Where things go
 
-**Adding a route.** Edit `ROUTES` in `src/core/routes.ts`, add the task's capabilities to `TASK_CAPABILITIES`, then update `contracts/render-matrix.md` with a source citation. Every claim in that table has to be checkable against `@deckops/sdk`.
+**Adding a route.** Edit `ROUTES` in `src/core/routes.ts`, add the task's capabilities to `TASK_CAPABILITIES`, then update the matrix in `docs/formats.md`.
 
 Probe the backend before writing the route down. Several formats look like they should work and do not — `doc2pdf` rejects `.xlsx`, and no task accepts `.pages` or `.numbers` — so a route added from the type definitions alone can be wrong. Then run `pnpm test:conformance` to confirm it end to end.
 
@@ -50,11 +50,18 @@ Probe the backend before writing the route down. Several formats look like they 
 
 If the flag can also come from a profile or config, add it to `SOFT_OPTION_KEYS` so an inherited value is dropped with a warning instead of failing. See `docs/profiles.md`.
 
-**Touching credentials.** `contracts/credentials.md` is shared with other DeckFlow tools. Changing the file format or the resolution chain needs an RFC update and coordination, and `tests/unit/credentials.test.ts` must keep passing — it guards the PRD requirement that DeckHTML and DeckRender share auth.
+**Touching credentials.** The credential file is shared with other DeckFlow tools, and its format is specified in `docs/configuration.md`. Changing the format or the resolution chain needs coordination with those tools, and `tests/unit/credentials.test.ts` must keep passing — it guards the requirement that logging in once works everywhere.
 
-## Contracts
+## What counts as a breaking change
 
-Files under `contracts/` are frozen. They describe promises other people's scripts depend on: the `--json` envelope, exit codes, the render matrix, the credential format. Changing one is a breaking change — say so in the PR description and update `CHANGELOG.md` in the same commit.
+Four things are promises other people's scripts depend on:
+
+- the `--json` result and error envelopes
+- error codes and exit codes
+- the render matrix
+- the shared credential file format
+
+Changing any of them is breaking. Say so in the PR description and update `CHANGELOG.md` in the same commit.
 
 ## Testing
 
@@ -74,4 +81,4 @@ Comments should explain _why_, especially where the code works around a backend 
 - `pnpm check` green
 - New behaviour comes with tests
 - User-facing changes update the relevant page in `docs/`
-- Contract changes update `contracts/` and `CHANGELOG.md`
+- Breaking changes update `docs/` and `CHANGELOG.md`

@@ -35,7 +35,7 @@ export function registerFormatsCommand(program: Command, modeOf: (cmd: Command) 
         chalk.dim('—        not supported'),
         '',
         chalk.dim('Image output also supports --image-format png|jpg|webp.'),
-        chalk.dim('Full details, including per-route flag support: contracts/render-matrix.md')
+        chalk.dim('Full details, including per-route flag support: docs/formats.md')
       );
 
       reporter.say(lines.join('\n'), buildJsonMatrix());

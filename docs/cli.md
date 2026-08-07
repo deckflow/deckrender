@@ -57,6 +57,25 @@ A URL is fetched locally and given a `<base href>` so relative assets resolve. T
 | `.zip`                        | Keeps `--format`, packs the result |
 | none                          | Treated as a directory             |
 
+## Where the output lands
+
+`-o` and the number of rendered frames together decide the shape of the output.
+
+| Situation                          | Result                                                   |
+| ---------------------------------- | -------------------------------------------------------- |
+| No `-o`, multiple frames           | Directory named after the input, `001.png`, `002.png`, … |
+| No `-o`, single file               | Beside the input, same base name, new extension          |
+| `-o dir/` or an extensionless path | That directory, numbered frames                          |
+| `-o out.png`, single frame         | Exactly `out.png`                                        |
+| `-o out.png`, multiple frames      | `out-001.png`, `out-002.png`, …                          |
+| `-o out.zip`                       | A zip of numbered frames                                 |
+| `-o -`, single frame               | Bytes on stdout                                          |
+| `-o -`, multiple frames            | `usage_error`                                            |
+
+Frame numbers are zero-padded to at least three digits, widening for documents past 999 pages.
+
+`-o -` writes the artifact's raw bytes to stdout and nothing else, so it cannot be combined with `--json`.
+
 ## Sizing
 
 `--width` sets the long edge directly. `--scale` multiplies the route's own base — 1920 for slides, 1080 for PDF.

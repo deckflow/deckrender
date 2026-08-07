@@ -92,7 +92,7 @@ Image output supports `png`, `jpg` and `webp` via `--image-format`.
 
 "chained" means DeckRender runs more than one backend task — slower, and sometimes with a fidelity note. Every render reports the exact task chain it used in `--json`'s `route` field, so nothing is hidden. Unsupported pairs fail with a clear message rather than producing something approximate.
 
-Full detail, including which flags each route accepts: [`contracts/render-matrix.md`](contracts/render-matrix.md).
+Full detail, including which flags each route accepts: [`docs/formats.md`](docs/formats.md).
 
 ## Authentication is optional
 

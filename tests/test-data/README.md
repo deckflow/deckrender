@@ -2,7 +2,7 @@
 
 `scripts/conformance.mjs` renders every document in this directory through every
 output format and diffs the result against the matrix in
-[`contracts/render-matrix.md`](../../contracts/render-matrix.md).
+[`docs/formats.md`](../../docs/formats.md).
 
 The documents themselves are **not** in the repository — they are large, and the
 ones that exercise the matrix well tend to be real work files. Bring your own.

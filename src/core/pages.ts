@@ -7,7 +7,7 @@ import { DeckRenderError } from '../errors/index.js';
  *
  * Note this only *selects* pages for download — the backend still renders the
  * whole document, because no DeckOps conversion task accepts a page range.
- * See contracts/render-matrix.md.
+ * See docs/formats.md.
  */
 export function parsePageSelection(spec: string): number[] {
   const trimmed = spec.trim();

@@ -104,4 +104,4 @@ DeckOps has no task that emits SVG, so `--image-format svg` is not offered. Offe
 
 ## Behind the matrix
 
-Every route maps to a task type in [`@deckops/sdk`](https://www.npmjs.com/package/@deckops/sdk). The line-by-line citations, so you can verify any claim here, are in [`contracts/render-matrix.md`](../contracts/render-matrix.md).
+Every cloud route maps to a task type in [`@deckops/sdk`](https://www.npmjs.com/package/@deckops/sdk); `deckrender formats --json` names the exact task chain for each one. The matrix is verified end to end by `scripts/conformance.mjs`, which renders a real document through every combination and diffs the result against this page.

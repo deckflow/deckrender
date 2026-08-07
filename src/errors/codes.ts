@@ -4,7 +4,7 @@
  * The first four codes are shared verbatim with DeckHTML so that scripts can
  * treat any DeckFlow CLI the same way. `unsupported_format` and
  * `unsupported_option` are DeckRender-specific: the render matrix has real
- * holes (see contracts/render-matrix.md) and users need to tell "this pair has
+ * holes (see docs/formats.md) and users need to tell "this pair has
  * no route at all" apart from "the route exists but this knob does not".
  */
 export const ERROR_CODES = [

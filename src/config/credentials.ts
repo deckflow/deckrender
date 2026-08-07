@@ -9,7 +9,7 @@ import { DIR_MODE, SECRET_FILE_MODE, credentialsPath, deckflowDir, deckopsConfig
  * DeckHTML documents this path but ships no implementation, so DeckRender is
  * the first writer. Every field is optional and writes are read-merge-write:
  * a future DeckHTML implementation adding its own keys must not lose them.
- * See contracts/credentials.md.
+ * See docs/configuration.md.
  */
 export const SharedCredentialsSchema = z
   .object({
@@ -105,7 +105,7 @@ export async function readDeckopsConfig(): Promise<z.infer<typeof DeckopsConfigS
 }
 
 /**
- * Resolve credentials through the five-level chain in contracts/credentials.md:
+ * Resolve credentials through the five-level chain in docs/configuration.md:
  *
  *   flags → env → ~/.deckflow/credentials → ~/.deckops/config.json → defaults
  *

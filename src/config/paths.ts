@@ -8,7 +8,7 @@ import path from 'node:path';
  *
  * - `~/.deckflow/` is the **organization-wide** store. Credentials written here
  *   are shared with DeckHTML and any other DeckFlow tool, which is the whole
- *   point of `deckrender auth login` (see contracts/credentials.md).
+ *   point of `deckrender auth login` (see docs/configuration.md).
  * - `~/.deckrender/` holds render defaults that are ours alone, so profile and
  *   image-format preferences never pollute the shared credential file.
  *
@@ -31,7 +31,7 @@ export function deckopsDir(): string {
   return process.env[DECKOPS_DIR_ENV] ?? path.join(os.homedir(), '.deckops');
 }
 
-/** Shared credential file. Format defined in contracts/credentials.md. */
+/** Shared credential file. Format defined in docs/configuration.md. */
 export function credentialsPath(): string {
   return path.join(deckflowDir(), 'credentials');
 }

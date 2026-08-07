@@ -131,4 +131,49 @@ export DECKRENDER_CONFIG_DIR=/tmp/deckrender
 
 Enforced on every write, including to files that already exist.
 
-The full cross-tool contract, for anyone implementing another DeckFlow CLI, is in [`contracts/credentials.md`](../contracts/credentials.md).
+## The credential file format
+
+Anyone implementing another DeckFlow tool reads and writes the same file, so the format is specified rather than left to whatever DeckRender happens to do.
+
+`~/.deckflow/credentials` is JSON. Every field is optional.
+
+```json
+{
+  "apiKey": "sk-...",
+  "token": "...",
+  "spaceId": "...",
+  "apiBase": "https://app.deckflow.com/v1"
+}
+```
+
+| Field     | Meaning                                                           |
+| --------- | ----------------------------------------------------------------- |
+| `apiKey`  | Long-lived key, sent as `Authorization: Bearer`                   |
+| `token`   | Session token from the browser login flow, sent as `X-Auth-Token` |
+| `spaceId` | Default workspace                                                 |
+| `apiBase` | API root. Defaults to `https://app.deckflow.com/v1`               |
+
+Rules for implementors:
+
+1. **Read-merge-write.** Never rewrite the file wholesale. Unknown keys belong to another tool and must survive.
+2. **Tolerate malformed content.** A corrupt or partially written file resolves to "no credentials", never a crash.
+3. **Never write another tool's config.** `~/.deckops/config.json` is readable as a fallback but is owned by the DeckOps CLI.
+4. **Keep tool-specific settings out.** Render defaults and the like belong in the tool's own directory.
+
+### Login flow
+
+Byte-for-byte compatible with the DeckOps CLI, so a token obtained by any tool works in all of them:
+
+```
+GET {apiBase minus /v1}/cli/auth?redirect_url=http://localhost:3737
+      ↓ browser completes login, redirects back
+GET http://localhost:3737/?token=<token>&spaceId=<spaceId>
+```
+
+The callback server accepts `spaceId` or `space_id`, listens on port 3737 by default, and times out after five minutes. Checkout, for a `402 Payment Required`, follows the same shape at `/cli/checkout`.
+
+### Guest mode
+
+Credentials are optional. Without them the backend creates tasks in a pending state that need an explicit `PUT /tools/tasks/:id/start`. Clients must issue that call when unauthenticated; authenticated tasks start on their own.
+
+Nothing should demand credentials up front — a `401` mid-request is the right trigger for an interactive login, which then retries the original request.

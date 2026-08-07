@@ -42,7 +42,7 @@ Combinations the CLI marks `soon` and reports as `not_implemented`:
 
 ## v1.0 — frozen contracts
 
-`contracts/` becomes stable under semver.
+The CLI output contract — the `--json` envelope, error codes, exit codes and artifact layout — becomes stable under semver.
 
 The agent-oriented view — images plus element bounding boxes — is composed at the DeckFlow level from DeckProbe's structural output and DeckRender's images. DeckRender will not parse documents to produce it; that would cross the boundary this tool is built around. Its only obligation is that page numbers in `--json` match DeckProbe's.
 

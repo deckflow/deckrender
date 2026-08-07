@@ -22,7 +22,7 @@ export interface WriteResult {
 }
 
 /**
- * Persist artifacts, following the layout rules in contracts/cli-output.md.
+ * Persist artifacts, following the layout rules in docs/cli.md.
  *
  * The shape of the output depends on both `-o` and how many frames came back,
  * so all of that decision-making lives here rather than being spread across

@@ -56,7 +56,7 @@ export interface PlanResult {
  *
  * `--quality` is an alias for a (long edge, encoding) pair on image routes —
  * the DeckOps PDF tasks accept no quality parameters at all, so it raises
- * `unsupported_option` there. See contracts/render-matrix.md.
+ * `unsupported_option` there. See docs/formats.md.
  */
 const QUALITY_PRESETS: Record<Quality, { tiered: number; free: number; imageFormat: ImageFormat }> = {
   low: { tiered: 1080, free: 1080, imageFormat: 'jpg' },
@@ -139,7 +139,7 @@ function unsupportedFormat(source: SourceFormat, target: TargetFormat): DeckRend
       : `Cannot render .${source}. Neither DeckOps nor the local engine handles this format.`;
 
   return DeckRenderError.unsupportedFormat(message, {
-    hint: 'Run `deckrender formats` or see contracts/render-matrix.md for the full support matrix.',
+    hint: 'Run `deckrender formats` or see docs/formats.md for the full support matrix.',
   });
 }
 
