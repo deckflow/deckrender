@@ -19,15 +19,15 @@ export interface BaseRoute {
 
 const HTML_TO_PDF_CAVEAT =
   'HTML is rebuilt as PPTX before PDF export, so layout is constrained by the slide model. ' +
-  'A native HTML renderer lands with the local engine (roadmap v0.2).';
+  'Rendering HTML natively is on the roadmap.';
 
 const HTML_TO_VIDEO_CAVEAT =
   'HTML is rebuilt as PPTX before the video is produced, so the result is a slideshow of the ' +
   'reconstructed page rather than a capture of the live document.';
 
 const IWORK_PREVIEW_CAVEAT =
-  'DeckOps has no renderer for this format, so DeckRender extracted the preview embedded in the ' +
-  'document. That is the first page only, at whatever resolution iWork saved it.';
+  'Rendered from the preview embedded in the document: the first page only, at whatever ' +
+  'resolution iWork saved it.';
 
 /**
  * Combinations that are planned but not built.
@@ -39,12 +39,11 @@ const IWORK_PREVIEW_CAVEAT =
 export const NOT_IMPLEMENTED: Readonly<Partial<Record<SourceFormat, Partial<Record<TargetFormat, string>>>>> =
   {
     xlsx: {
-      image:
-        'Spreadsheet rendering needs a layout engine DeckRender does not ship yet, and DeckOps has no converter for it.',
-      pdf: 'Spreadsheet rendering needs a layout engine DeckRender does not ship yet, and DeckOps has no converter for it.',
+      image: 'Spreadsheet rendering needs a layout engine DeckRender does not have yet.',
+      pdf: 'Spreadsheet rendering needs a layout engine DeckRender does not have yet.',
     },
-    pdf: { video: 'PDF to video needs local frame assembly (ffmpeg), which is not bundled yet.' },
-    key: { video: 'Keynote to video needs local frame assembly (ffmpeg), which is not bundled yet.' },
+    pdf: { video: 'PDF to video needs frame assembly that DeckRender does not bundle yet.' },
+    key: { video: 'Keynote to video needs frame assembly that DeckRender does not bundle yet.' },
   };
 
 export function plannedReason(source: SourceFormat, target: TargetFormat): string | undefined {
@@ -111,8 +110,8 @@ export const ROUTES: Readonly<Record<SourceFormat, Partial<Record<TargetFormat, 
 /**
  * Extensions we recognize as documents but cannot render.
  *
- * Listed separately from ROUTES so the error can say "DeckOps has no converter
- * for this format" instead of the vaguer "unknown extension".
+ * Listed separately from ROUTES so the error can name the format instead of
+ * falling back to the vaguer "unknown extension".
  */
 export const KNOWN_UNRENDERABLE_EXTENSIONS = ['.xls', '.txt', '.rtf', '.odt', '.ods', '.odp'] as const;
 

@@ -78,8 +78,8 @@ Planned, but not built. The message says "coming soon" and names what is blockin
 
 ```
 Error: Rendering .xlsx to pdf is coming soon — not supported yet.
-  Spreadsheet rendering needs a layout engine DeckRender does not ship yet, and
-  DeckOps has no converter for it. Track it in docs/roadmap.md.
+  Spreadsheet rendering needs a layout engine DeckRender does not have yet.
+  Track it in docs/roadmap.md.
 ```
 
 The distinction from `unsupported_format` matters: one is worth waiting for, the

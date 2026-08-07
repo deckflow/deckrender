@@ -22,13 +22,13 @@ Also planned: switch URL input to the backend's `html.getByURL` once it reaches 
 
 Combinations the CLI marks `soon` and reports as `not_implemented`:
 
-| Combination          | Blocked on                                                                                                                                       |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `.xlsx` → image, pdf | A spreadsheet layout engine. DeckOps has no converter, and a workbook needs a real layout pass — not something to fake from an embedded preview. |
-| `.pdf` → video       | Local frame assembly (ffmpeg), not bundled.                                                                                                      |
-| `.key` → video       | Local frame assembly (ffmpeg), not bundled.                                                                                                      |
+| Combination          | Blocked on                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `.xlsx` → image, pdf | A spreadsheet layout engine. A workbook needs a real layout pass — not something to fake from an embedded preview. |
+| `.pdf` → video       | Local frame assembly (ffmpeg), not bundled.                                                                        |
+| `.key` → video       | Local frame assembly (ffmpeg), not bundled.                                                                        |
 
-`.pages` and `.numbers` reached coverage a different way: they have no cloud converter either, but every iWork document embeds a first-page `preview.jpg`, and extracting that needs only a ZIP reader. That ships today as the `local` engine, labelled as a preview rather than a render. A real renderer for them stays on this list in spirit — the preview is a floor, not the goal.
+`.pages` and `.numbers` are supported today by rendering the first-page preview every iWork document embeds. That is a floor, not the goal: a full renderer for them stays on this list in spirit, and `docs/formats.md` states the first-page limitation plainly so nobody is surprised.
 
 ## v0.3 — video parameters
 

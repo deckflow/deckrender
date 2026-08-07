@@ -27,42 +27,33 @@ export function registerFormatsCommand(program: Command, modeOf: (cmd: Command) 
 
       lines.push(
         '',
-        `${chalk.green('yes')}      one backend task`,
-        `${chalk.yellow('chained')}  several tasks; slower, and fidelity notes may apply`,
-        `${chalk.green('copy')}     already in the target format, copied without re-rendering`,
-        `${chalk.cyan('local')}    rendered on this machine, no network`,
-        `${chalk.magenta('soon')}     planned, not built yet`,
-        chalk.dim('—        not supported'),
+        `${chalk.green('yes')}   supported`,
+        `${chalk.magenta('soon')}  planned, not built yet`,
+        chalk.dim('—     not supported'),
         '',
         chalk.dim('Image output also supports --image-format png|jpg|webp.'),
-        chalk.dim('Full details, including per-route flag support: docs/formats.md')
+        chalk.dim('Per-format notes and flag support: docs/formats.md')
       );
 
       reporter.say(lines.join('\n'), buildJsonMatrix());
     });
 }
 
+/**
+ * One matrix cell.
+ *
+ * Deliberately says only whether the combination works. How it is produced —
+ * one backend task, a chain of them, or an engine on this machine — is an
+ * implementation detail that would only invite users to read some supported
+ * routes as second class. `--json` still carries the full route for tooling
+ * that needs it.
+ */
 function cell(source: SourceFormat, target: TargetFormat): string {
-  const route = ROUTES[source]?.[target];
-
-  if (!route) {
-    // Pad before colouring: ANSI escapes would otherwise count toward width.
-    return plannedReason(source, target) ? chalk.magenta('soon'.padEnd(10)) : chalk.dim('—'.padEnd(10));
+  // Pad before colouring: ANSI escapes would otherwise count toward width.
+  if (ROUTES[source]?.[target]) {
+    return chalk.green('yes'.padEnd(10));
   }
-
-  const label =
-    route.kind === 'passthrough'
-      ? 'copy'
-      : route.kind === 'local'
-        ? 'local'
-        : route.kind === 'direct'
-          ? 'yes'
-          : 'chained';
-  const padded = label.padEnd(10);
-
-  if (route.kind === 'derived') return chalk.yellow(padded);
-  if (route.kind === 'local') return chalk.cyan(padded);
-  return chalk.green(padded);
+  return plannedReason(source, target) ? chalk.magenta('soon'.padEnd(10)) : chalk.dim('—'.padEnd(10));
 }
 
 function buildJsonMatrix(): Record<string, unknown> {

@@ -136,7 +136,7 @@ function unsupportedFormat(source: SourceFormat, target: TargetFormat): DeckRend
   const message =
     supported.length > 0
       ? `Cannot render .${source} to ${target}. Supported outputs for .${source}: ${supported.join(', ')}.`
-      : `Cannot render .${source}. Neither DeckOps nor the local engine handles this format.`;
+      : `Cannot render .${source}. This format is not supported.`;
 
   return DeckRenderError.unsupportedFormat(message, {
     hint: 'Run `deckrender formats` or see docs/formats.md for the full support matrix.',
@@ -201,7 +201,7 @@ function validateOptions(input: PlanInput, routeTasks: DeckTaskType[], warnings:
 
     if (capability.resolution.kind === 'none') {
       const workaround =
-        `The backend task ${imageTask} accepts no resolution parameters. ` +
+        `Rendering .${input.source} offers no resolution control. ` +
         'Workaround: render to PDF first, then run deckrender on the PDF.';
       if (effective.width !== undefined) {
         reject('width', '--width', `--width is not supported for .${input.source} input.`, workaround);
@@ -214,7 +214,7 @@ function validateOptions(input: PlanInput, routeTasks: DeckTaskType[], warnings:
           'quality',
           '--quality',
           `--quality is not supported for .${input.source} input.`,
-          `The backend task ${imageTask} accepts no resolution or encoding parameters.`
+          `Rendering .${input.source} offers no resolution or encoding control.`
         );
       }
     }
@@ -224,7 +224,7 @@ function validateOptions(input: PlanInput, routeTasks: DeckTaskType[], warnings:
         'imageFormat',
         '--image-format',
         `--image-format jpg is not supported for .${input.source} input.`,
-        `The backend task ${imageTask} always emits PNG. Use png or webp.`
+        `Rendering .${input.source} always produces PNG. Use png or webp.`
       );
     }
 
@@ -233,7 +233,7 @@ function validateOptions(input: PlanInput, routeTasks: DeckTaskType[], warnings:
         'pages',
         '--pages',
         `--pages is not supported for .${input.source} input, which renders to a single image.`,
-        `The backend task ${imageTask} produces one full-page image.`
+        `Rendering .${input.source} produces one full-page image.`
       );
     }
   }

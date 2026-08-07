@@ -108,7 +108,7 @@ Pages are 1-based and ranges are inclusive. Requesting a page past the end of th
 
 `--pages` filters at download time — **the backend still renders every page**, so this saves bandwidth and disk, not compute or cost. It does not apply to single-file output (pdf, video) or to HTML and Markdown, which produce one image.
 
-On chained webp routes the filter is applied before the per-frame conversion, so unwanted frames are never converted.
+For webp output the filter is applied before conversion, so narrowing the range also narrows the work.
 
 ## Commands
 

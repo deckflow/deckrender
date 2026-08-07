@@ -74,23 +74,23 @@ $ deckrender deck.pptx --json
 deckrender formats
 ```
 
-| Input                   | → image  | → pdf      | → video    |
-| ----------------------- | -------- | ---------- | ---------- |
-| `.pptx` `.ppt`          | ✅       | ✅         | ✅         |
-| `.pdf`                  | ✅       | copy       | 🕓         |
-| `.key`                  | ✅       | ✅         | 🕓         |
-| `.docx` `.doc`          | chained  | ✅         | —          |
-| `.xlsx`                 | 🕓       | 🕓         | —          |
-| `.pages`                | local ⚠️ | local ⚠️   | —          |
-| `.numbers`              | local ⚠️ | local ⚠️   | —          |
-| `.html` `.htm` and URLs | ✅       | chained ⚠️ | chained ⚠️ |
-| `.md`                   | ✅       | —          | —          |
+| Input          | → image | → pdf | → video |
+| -------------- | ------- | ----- | ------- |
+| `.pptx` `.ppt` | ✅      | ✅    | ✅      |
+| `.pdf`         | ✅      | ✅    | 🕓      |
+| `.key`         | ✅      | ✅    | 🕓      |
+| `.docx` `.doc` | ✅      | ✅    | —       |
+| `.xlsx`        | 🕓      | 🕓    | —       |
+| `.pages`       | ✅      | ✅    | —       |
+| `.numbers`     | ✅      | ✅    | —       |
+| `.html` + URLs | ✅      | ✅    | ✅      |
+| `.md`          | ✅      | —     | —       |
 
 Image output supports `png`, `jpg` and `webp` via `--image-format`.
 
-**local** runs on this machine with no network — Pages and Numbers have no cloud converter, so DeckRender extracts the preview embedded in the document (first page only). **🕓** is planned but not built; those report `not_implemented` with a message naming what is blocking them.
+**🕓** is planned but not built; those report `not_implemented` with a message naming what is blocking them. Unsupported pairs fail with a clear message rather than producing something approximate.
 
-"chained" means DeckRender runs more than one backend task — slower, and sometimes with a fidelity note. Every render reports the exact task chain it used in `--json`'s `route` field, so nothing is hidden. Unsupported pairs fail with a clear message rather than producing something approximate.
+Pages and Numbers render their embedded first-page preview — see [`docs/formats.md`](docs/formats.md) for that and the other per-format notes.
 
 Full detail, including which flags each route accepts: [`docs/formats.md`](docs/formats.md).
 
@@ -164,7 +164,7 @@ Input (file | URL | stdin)
 
 Rendering is performed by [`@deckops/sdk`](https://www.npmjs.com/package/@deckops/sdk). DeckRender contributes the input model, the render routing, artifact naming, and a stable output contract.
 
-Rendering always runs in the DeckFlow cloud today. A local engine (Playwright for HTML, pdfium for PDF) is planned for v0.2 — the `RenderEngine` seam is already in place, so adding it will not disturb the rest of the pipeline.
+Most rendering runs in the DeckFlow cloud; a few formats are handled on your machine. Which is which is an implementation detail — `deckrender formats` reports what works, and `--json` reports how it was produced if you need to know.
 
 ## Contributing
 
