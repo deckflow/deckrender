@@ -42,6 +42,32 @@ jobs:
       - run: pnpm build
       - run: pnpm test:e2e
 
-      - run: pnpm publish --access public --no-git-checks --provenance
+      # A version already on npm is not a failure: the tag may have been pushed
+      # after a manual publish, or re-pushed to rerun the checks. Publishing is
+      # the only step here that cannot be repeated, so it is the only one that
+      # needs the guard.
+      - name: Check whether this version is already published
+        id: published
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "already=true" >> "$GITHUB_OUTPUT"
+            echo "$NAME@$VERSION is already on npm — skipping publish."
+          else
+            echo "already=false" >> "$GITHUB_OUTPUT"
+            echo "$NAME@$VERSION is not on npm yet."
+          fi
+
+      - name: Publish to npm
+        if: steps.published.outputs.already == 'false'
+        run: |
+          if [ -z "$NODE_AUTH_TOKEN" ]; then
+            echo "::error::NPM_TOKEN is not configured, so this release cannot be published."
+            echo "Create an Automation token at npmjs.com and add it with:"
+            echo "  gh secret set NPM_TOKEN -R ${{ github.repository }}"
+            exit 1
+          fi
+          pnpm publish --access public --no-git-checks --provenance
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
