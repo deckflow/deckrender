@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+# Keep shell scripts executable and LF regardless of platform
+*.sh text eol=lf

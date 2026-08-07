@@ -1,0 +1,23 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+.DS_Store
+._*
+.idea/
+.vscode/
+
+*.log
+.env
+.env.local
+
+tests/**/__tmp__/
+
+# Design and requirement documents. Not part of the published project.
+internal/
+
+# Sample documents used by the conformance script. They are large and often
+# real customer files, so contributors bring their own — see the README there.
+tests/test-data/*
+!tests/test-data/README.md

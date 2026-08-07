@@ -1,0 +1,63 @@
+/**
+ * @deckflow/deckrender
+ *
+ * Render any document format into visual artifacts.
+ *
+ *   import { render } from '@deckflow/deckrender';
+ *   await render({ input: 'deck.pptx', format: 'image', pages: '1-10', out: 'frames/' });
+ */
+
+export { createRenderer, render, type Renderer, type RendererOptions } from './core/renderer.js';
+
+export { buildPlan, type PlanInput, type PlanResult, type SoftOption } from './core/plan.js';
+export { applyPageSelection, parsePageSelection } from './core/pages.js';
+export {
+  ROUTES,
+  KNOWN_UNRENDERABLE_EXTENSIONS,
+  NOT_IMPLEMENTED,
+  plannedReason,
+  capabilityFor,
+  findRoute,
+  imageProducingTask,
+  snapToTier,
+  supportedTargets,
+  type BaseRoute,
+  type TaskCapability,
+} from './core/routes.js';
+
+export { CloudEngine, type CloudEngineOptions } from './engines/cloud.js';
+export { LocalEngine, extractIworkPreview } from './engines/local.js';
+export { normalizeTaskResult, extensionOf } from './engines/artifacts.js';
+export type { EngineOutput, ExecuteContext, RenderEngine } from './engines/engine.js';
+
+export { resolveInput, inputBaseName, withBaseHref, type ResolveInputOptions } from './input/resolve.js';
+export { writeArtifacts, type WriteOptions, type WriteResult } from './output/writer.js';
+export { jpegToPdf, readJpegSize } from './output/jpeg-pdf.js';
+export { listZipEntries, readZipEntry, type ZipEntryInfo } from './input/unzip.js';
+export { DEFAULT_EXTENSION, frameName, inferFromOutputPath, templatedName } from './output/naming.js';
+
+export {
+  DEFAULT_API_BASE,
+  hasCredentials,
+  readSharedCredentials,
+  resolveCredentials,
+  writeSharedCredentials,
+  type CredentialOverrides,
+  type CredentialSource,
+  type ResolvedCredentials,
+  type SharedCredentials,
+} from './config/index.js';
+
+export { PROFILES, layerOptions, type ProfileDefaults } from './cli/profiles.js';
+
+export {
+  DeckRenderError,
+  ERROR_CODES,
+  ExitCode,
+  isDeckRenderError,
+  mapSdkError,
+  type ErrorCode,
+} from './errors/index.js';
+
+export * from './types.js';
+export { VERSION } from './version.js';
