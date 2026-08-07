@@ -166,18 +166,27 @@ Rendering is performed by [`@deckops/sdk`](https://www.npmjs.com/package/@deckop
 
 Most rendering runs in the DeckFlow cloud; a few formats are handled on your machine. Which is which is an implementation detail — `deckrender formats` reports what works, and `--json` reports how it was produced if you need to know.
 
-## Contributing
+## Development
 
-Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+Issues and pull requests are welcome. Node.js 18 or newer.
 
 ```bash
 pnpm install
-pnpm check     # typecheck + lint + unit + integration
-pnpm build && pnpm test:e2e
+pnpm check                    # typecheck + lint + unit + integration
+pnpm build && pnpm test:e2e   # e2e drives the built binary
 
-# Optional: exercise the real guest cloud path
-DECKRENDER_E2E=1 pnpm test:cloud
+DECKRENDER_E2E=1 pnpm test:cloud    # guest render against the live backend
+pnpm test:conformance              # every format pair; needs credentials
 ```
+
+The route table in `src/core/routes.ts` decides what converts to what. Probe the
+backend before adding to it — several plausible-looking conversions do not
+actually work, so a route inferred from type definitions alone can be wrong.
+`pnpm test:conformance` confirms the matrix end to end.
+
+The `--json` envelope, error codes, exit codes and the shared credential file
+format are what other people's scripts depend on. Changing any of them is a
+breaking change; note it in `CHANGELOG.md`.
 
 ## License
 
