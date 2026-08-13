@@ -90,13 +90,15 @@ deckrender config set width 2560
 deckrender config unset width
 ```
 
-| Key                       | Values                                      |
-| ------------------------- | ------------------------------------------- |
-| `profile`                 | `web`, `presentation`, `print`, `thumbnail` |
-| `format`                  | `image`, `pdf`, `video`                     |
-| `image-format`            | `png`, `jpg`, `webp`                        |
-| `quality`                 | `low`, `medium`, `high`                     |
-| `width` `scale` `timeout` | numbers                                     |
+| Key            | Values                                      |
+| -------------- | ------------------------------------------- |
+| `profile`      | `web`, `presentation`, `print`, `thumbnail` |
+| `format`       | `image`, `pdf`, `video`                     |
+| `image-format` | `png`, `jpg`, `webp`                        |
+| `quality`      | `low`, `medium`, `high`                     |
+| `width`        | integer from `1` to `32768`                 |
+| `scale`        | number greater than `0`, up to `16`         |
+| `timeout`      | integer seconds from `1` to `86400`         |
 
 Precedence, lowest first:
 
@@ -120,6 +122,7 @@ Redirect config to a scratch directory when you need isolation:
 ```bash
 export DECKFLOW_CONFIG_DIR=/tmp/deckflow
 export DECKRENDER_CONFIG_DIR=/tmp/deckrender
+export DECKOPS_CONFIG_DIR=/tmp/deckops
 ```
 
 ## File permissions

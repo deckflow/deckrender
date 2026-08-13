@@ -19,7 +19,7 @@ describe('parsePageSelection', () => {
     expect(parsePageSelection(' 1 , 3 - 4 ')).toEqual([1, 3, 4]);
   });
 
-  it.each(['', '0', '-1', '3-1', 'a', '1-', '1..3'])('rejects %j', (spec) => {
+  it.each(['', '0', '-1', '3-1', 'a', '1-', '1..3', '100001'])('rejects %j', (spec) => {
     expect(() => parsePageSelection(spec)).toThrowError(DeckRenderError);
     try {
       parsePageSelection(spec);
@@ -38,5 +38,9 @@ describe('applyPageSelection', () => {
 
   it('reports out-of-range pages instead of silently dropping them', () => {
     expect(() => applyPageSelection(frames, [2, 9])).toThrowError(/rendered 4 pages/);
+  });
+
+  it('rejects an empty runtime page array', () => {
+    expect(() => applyPageSelection(frames, [])).toThrowError(DeckRenderError);
   });
 });

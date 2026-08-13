@@ -4,6 +4,21 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.1.1] - 2026-08-13
+
+### Fixed
+
+- Publish declarations with an explicit Node type reference so strict TypeScript 7 consumers can
+  resolve the public `Buffer` APIs without changing their compiler options.
+- Validate SDK render options, plan inputs and custom engine output at runtime, returning
+  `DeckRenderError` instead of forwarding invalid values or exposing Node argument errors.
+- Isolate DeckRender, DeckFlow and DeckOps configuration plus credential environment variables in
+  CLI end-to-end tests.
+- Correct the legacy Office support matrix: `.doc` is unsupported, while `.ppt` supports image and
+  video output; `.ppt` to PDF remains planned pending a `.pptx` normalization step.
+
 ## [0.1.0] - 2026-08-07
 
 First release.
@@ -14,10 +29,12 @@ First release.
 
   | Input               | → image | → pdf | → video |
   | ------------------- | ------- | ----- | ------- |
-  | `.pptx` `.ppt`      | ✅      | ✅    | ✅      |
+  | `.pptx`             | ✅      | ✅    | ✅      |
+  | `.ppt`              | ✅      | 🕓    | ✅      |
   | `.pdf`              | ✅      | ✅    | 🕓      |
   | `.key`              | ✅      | ✅    | 🕓      |
-  | `.docx` `.doc`      | ✅      | ✅    | —       |
+  | `.docx`             | ✅      | ✅    | —       |
+  | `.doc`              | —       | —     | —       |
   | `.xlsx`             | 🕓      | 🕓    | —       |
   | `.pages` `.numbers` | ✅      | ✅    | —       |
   | `.html` and URLs    | ✅      | ✅    | ✅      |
@@ -62,4 +79,6 @@ output and diffs the result against the documented matrix. Several conversions
 that looked plausible from the type definitions turned out not to work, so the
 matrix reflects measurement rather than inference.
 
+[Unreleased]: https://github.com/deckflow/deckrender/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/deckflow/deckrender/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/deckflow/deckrender/releases/tag/v0.1.0

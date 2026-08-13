@@ -43,6 +43,9 @@ export const NOT_IMPLEMENTED: Readonly<Partial<Record<SourceFormat, Partial<Reco
       pdf: 'Spreadsheet rendering needs a layout engine DeckRender does not have yet.',
     },
     pdf: { video: 'PDF to video needs frame assembly that DeckRender does not bundle yet.' },
+    ppt: {
+      pdf: 'Legacy .ppt files need normalization to .pptx before the stable PDF converter can run.',
+    },
     key: { video: 'Keynote to video needs frame assembly that DeckRender does not bundle yet.' },
   };
 
@@ -58,7 +61,6 @@ export const ROUTES: Readonly<Record<SourceFormat, Partial<Record<TargetFormat, 
   },
   ppt: {
     image: { kind: 'direct', tasks: ['convertor.ppt2image'] },
-    pdf: { kind: 'direct', tasks: ['convertor.ppt2pdf'] },
     video: { kind: 'direct', tasks: ['convertor.ppt2video'] },
   },
   pdf: {
@@ -73,10 +75,7 @@ export const ROUTES: Readonly<Record<SourceFormat, Partial<Record<TargetFormat, 
     image: { kind: 'derived', tasks: ['convertor.doc2pdf', 'convertor.pdf2image'] },
     pdf: { kind: 'direct', tasks: ['convertor.doc2pdf'] },
   },
-  doc: {
-    image: { kind: 'derived', tasks: ['convertor.doc2pdf', 'convertor.pdf2image'] },
-    pdf: { kind: 'direct', tasks: ['convertor.doc2pdf'] },
-  },
+  doc: {},
   html: {
     image: { kind: 'direct', tasks: ['convertor.html2png'] },
     pdf: {

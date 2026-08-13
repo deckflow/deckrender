@@ -80,6 +80,7 @@ describe('route selection', () => {
 
 describe('coming soon', () => {
   it.each([
+    ['ppt', 'pdf'],
     ['xlsx', 'image'],
     ['xlsx', 'pdf'],
     ['pdf', 'video'],
@@ -102,6 +103,8 @@ describe('coming soon', () => {
     // "Not yet" and "never" are different answers and lead to different actions.
     expect(codeOf(() => buildPlan({ source: 'xlsx', target: 'video' }))).toBe('unsupported_format');
     expect(codeOf(() => buildPlan({ source: 'pages', target: 'video' }))).toBe('unsupported_format');
+    expect(codeOf(() => buildPlan({ source: 'doc', target: 'image' }))).toBe('unsupported_format');
+    expect(codeOf(() => buildPlan({ source: 'doc', target: 'pdf' }))).toBe('unsupported_format');
   });
 });
 

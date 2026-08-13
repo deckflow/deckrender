@@ -10,6 +10,12 @@
 export { createRenderer, render, type Renderer, type RendererOptions } from './core/renderer.js';
 
 export { buildPlan, type PlanInput, type PlanResult, type SoftOption } from './core/plan.js';
+export {
+  MAX_PAGE_NUMBER,
+  MAX_RENDER_SCALE,
+  MAX_RENDER_WIDTH,
+  MAX_TIMEOUT_SECONDS,
+} from './core/validation.js';
 export { applyPageSelection, parsePageSelection } from './core/pages.js';
 export {
   ROUTES,

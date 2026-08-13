@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { isolatedCliEnv } from './env.js';
 
 const run = promisify(execFile);
 const CLI = fileURLToPath(new URL('../../dist/cli.js', import.meta.url));
@@ -27,29 +28,10 @@ describeCloud('real DeckOps guest smoke test', () => {
   it('renders stdin HTML to PNG without credentials', async () => {
     const configDir = path.join(workDir, 'config');
     const output = path.join(workDir, 'guest.png');
-    const env: NodeJS.ProcessEnv = {
-      ...process.env,
-      DECKFLOW_CONFIG_DIR: configDir,
-      DECKOPS_CONFIG_DIR: configDir,
-      DECKRENDER_CONFIG_DIR: configDir,
-      NO_COLOR: '1',
-    };
-
-    for (const key of [
-      'DECKRENDER_API_KEY',
-      'DECKFLOW_API_KEY',
-      'DECKHTML_API_KEY',
-      'DECKRENDER_TOKEN',
-      'DECKFLOW_TOKEN',
-      'DECKRENDER_SPACE_ID',
-      'DECKFLOW_SPACE_ID',
-    ]) {
-      delete env[key];
-    }
+    const env = isolatedCliEnv(configDir);
 
     // Allow testing a compatible deployment without changing the normal
     // credential precedence or accidentally inheriting a developer's base.
-    delete env.DECKFLOW_API_BASE;
     env.DECKRENDER_API_BASE = process.env.DECKRENDER_E2E_API_BASE ?? 'https://app.deckflow.com/v1';
 
     const child = run(

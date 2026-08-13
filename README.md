@@ -76,10 +76,12 @@ deckrender formats
 
 | Input          | → image | → pdf | → video |
 | -------------- | ------- | ----- | ------- |
-| `.pptx` `.ppt` | ✅      | ✅    | ✅      |
+| `.pptx`        | ✅      | ✅    | ✅      |
+| `.ppt`         | ✅      | 🕓    | ✅      |
 | `.pdf`         | ✅      | ✅    | 🕓      |
 | `.key`         | ✅      | ✅    | 🕓      |
-| `.docx` `.doc` | ✅      | ✅    | —       |
+| `.docx`        | ✅      | ✅    | —       |
+| `.doc`         | —       | —     | —       |
 | `.xlsx`        | 🕓      | 🕓    | —       |
 | `.pages`       | ✅      | ✅    | —       |
 | `.numbers`     | ✅      | ✅    | —       |
@@ -91,6 +93,9 @@ Image output supports `png`, `jpg` and `webp` via `--image-format`.
 **🕓** is planned but not built; those report `not_implemented` with a message naming what is blocking them. Unsupported pairs fail with a clear message rather than producing something approximate.
 
 Pages and Numbers render their embedded first-page preview — see [`docs/formats.md`](docs/formats.md) for that and the other per-format notes.
+
+Legacy Word `.doc` files are not supported. Save them as `.docx` or export them to PDF first.
+Legacy PowerPoint `.ppt` files support image and video output; PDF conversion is still planned.
 
 Full detail, including which flags each route accepts: [`docs/formats.md`](docs/formats.md).
 

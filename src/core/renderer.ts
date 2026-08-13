@@ -3,6 +3,7 @@ import { createDeck, type DeckClient } from '@deckops/sdk';
 import { DeckRenderError } from '../errors/index.js';
 import { CloudEngine } from '../engines/cloud.js';
 import { LocalEngine } from '../engines/local.js';
+import { validateEngineOutput } from '../engines/validate.js';
 import type { EngineOutput, RenderEngine } from '../engines/engine.js';
 import { inputBaseName, resolveInput } from '../input/resolve.js';
 import { DEFAULT_EXTENSION } from '../output/naming.js';
@@ -11,6 +12,7 @@ import { hasCredentials, resolveCredentials, type CredentialOverrides } from '..
 import type { RenderArtifact, RenderOptions, RenderResult } from '../types.js';
 import { parsePageSelection } from './pages.js';
 import { buildPlan } from './plan.js';
+import { validateRenderOptions } from './validation.js';
 
 export interface RendererOptions extends CredentialOverrides {
   /** Pre-built DeckOps client. Supplying one skips credential resolution. */
@@ -41,6 +43,7 @@ export function render(options: RenderOptions & RendererOptions): Promise<Render
 }
 
 async function runRender(options: RenderOptions, rendererOptions: RendererOptions): Promise<RenderResult> {
+  validateRenderOptions(options);
   const startedAt = Date.now();
   const warn = rendererOptions.onWarning ?? (() => undefined);
 
@@ -127,10 +130,11 @@ async function executePlan(
     throw DeckRenderError.render(`The ${engine.name} engine cannot execute this route.`);
   }
 
-  const output = await engine.execute(plan, {
+  const rawOutput: unknown = await engine.execute(plan, {
     input,
     ...(options.onProgress ? { onProgress: options.onProgress } : {}),
   });
+  const output = validateEngineOutput(engine.name, rawOutput);
 
   return { ...output, engine: engine.name };
 }

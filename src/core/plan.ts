@@ -18,6 +18,7 @@ import {
   supportedTargets,
   type ResolutionSupport,
 } from './routes.js';
+import { validatePlanInput } from './validation.js';
 
 export interface PlanInput {
   source: SourceFormat;
@@ -65,6 +66,7 @@ const QUALITY_PRESETS: Record<Quality, { tiered: number; free: number; imageForm
 };
 
 export function buildPlan(input: PlanInput): PlanResult {
+  validatePlanInput(input);
   const warnings: PlanWarning[] = [];
   const route = findRoute(input.source, input.target);
 

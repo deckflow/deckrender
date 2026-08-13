@@ -9,10 +9,12 @@ deckrender formats --json   # machine-readable, includes the backend task chain
 
 | Input                   | → image | → pdf | → video |
 | ----------------------- | ------- | ----- | ------- |
-| `.pptx` `.ppt`          | ✅      | ✅    | ✅      |
+| `.pptx`                 | ✅      | ✅    | ✅      |
+| `.ppt`                  | ✅      | 🕓    | ✅      |
 | `.pdf`                  | ✅      | ✅    | 🕓      |
 | `.key`                  | ✅      | ✅    | 🕓      |
-| `.docx` `.doc`          | ✅      | ✅    | —       |
+| `.docx`                 | ✅      | ✅    | —       |
+| `.doc`                  | —       | —     | —       |
 | `.xlsx`                 | 🕓      | 🕓    | —       |
 | `.pages`                | ✅      | ✅    | —       |
 | `.numbers`              | ✅      | ✅    | —       |
@@ -45,7 +47,7 @@ Not every option applies everywhere. What a route can honour depends on how the 
 | ------------------- | ---------------------------- | ---------------- | ----------- |
 | `.pptx` `.ppt`      | ✅ snapped to 1080/1920/2560 | png, jpg, webp   | ✅          |
 | `.pdf`              | ✅ any value                 | png, jpg, webp   | ✅          |
-| `.docx` `.doc`      | ✅ any value                 | png, jpg, webp   | ✅          |
+| `.docx`             | ✅ any value                 | png, jpg, webp   | ✅          |
 | `.key`              | ✗                            | png, webp        | ✅          |
 | `.html` and URLs    | ✅                           | png, webp        | ✗ one image |
 | `.md`               | ✅                           | png, webp        | ✗ one image |
@@ -57,8 +59,16 @@ PDF and video output accept no sizing, encoding, quality or page options — the
 
 ## Per-format notes
 
-Everything in the matrix works. These notes are about what the output _is_ — the
+Everything marked ✅ in the matrix works. These notes are about what the output _is_ — the
 cases where the result differs from a plain full-fidelity render.
+
+### Legacy Office formats
+
+Legacy PowerPoint `.ppt` files render to images and video. PDF output is planned but not currently
+supported: the reliable route needs to normalize `.ppt` to `.pptx` before PDF conversion.
+
+Legacy Word `.doc` files are not supported by the backend converter. Save them as `.docx` or export
+them to PDF before rendering.
 
 ### Pages and Numbers — first page only
 

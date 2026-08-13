@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { DIR_MODE, configPath, deckrenderDir } from './paths.js';
 import { DeckRenderError } from '../errors/DeckRenderError.js';
 import { IMAGE_FORMATS, PROFILE_NAMES, QUALITIES, TARGET_FORMATS } from '../types.js';
+import { MAX_RENDER_SCALE, MAX_RENDER_WIDTH, MAX_TIMEOUT_SECONDS } from '../core/validation.js';
 
 /**
  * `~/.deckrender/config.json` — render defaults only.
@@ -16,9 +17,9 @@ export const ConfigSchema = z
     format: z.enum(TARGET_FORMATS).optional(),
     imageFormat: z.enum(IMAGE_FORMATS).optional(),
     quality: z.enum(QUALITIES).optional(),
-    width: z.number().int().positive().optional(),
-    scale: z.number().positive().optional(),
-    timeout: z.number().int().positive().optional(),
+    width: z.number().int().positive().max(MAX_RENDER_WIDTH).optional(),
+    scale: z.number().positive().max(MAX_RENDER_SCALE).optional(),
+    timeout: z.number().int().positive().max(MAX_TIMEOUT_SECONDS).optional(),
   })
   .strict();
 

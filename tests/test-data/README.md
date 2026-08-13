@@ -15,8 +15,10 @@ finds for each and ignores the rest.
 | File           | Covers                                                   |
 | -------------- | -------------------------------------------------------- |
 | `test.pptx`    | `ppt2image`, `ppt2pdf`, `ppt2video`                      |
+| `test.ppt`     | legacy `ppt2image` and `ppt2video`; PDF stays planned    |
 | `test.pdf`     | `pdf2image`, and the pdf-to-pdf passthrough              |
 | `test.docx`    | the `doc2pdf → pdf2image` chain                          |
+| `test.doc`     | asserts that legacy Word remains unsupported             |
 | `test.key`     | `keynote2image`, `keynote2pdf`                           |
 | `test.html`    | `html2png`, and the `html2pptx → ppt2*` chains           |
 | `test.pages`   | the local iWork preview extractor                        |

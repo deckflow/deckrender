@@ -2,8 +2,9 @@
 
 ## v0.1 — shipped
 
-- `pptx` `ppt` `pdf` `key` `docx` `doc` `html` `md` and URLs → image and PDF
-- `pptx` `ppt` → video
+- `pptx` `pdf` `key` `docx` `html` `md` and URLs → image and PDF
+- `ppt` → image and video
+- `pptx` → video
 - Cloud engine over `@deckops/sdk`
 - Profiles, `--json` envelope, page selection, zip and stdout output
 - Credentials shared with DeckHTML and DeckOps; guest mode without login
@@ -24,6 +25,7 @@ Combinations the CLI marks `soon` and reports as `not_implemented`:
 
 | Combination          | Blocked on                                                                                                         |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `.ppt` → pdf         | Normalize the legacy binary file to `.pptx` before invoking the stable PDF converter.                              |
 | `.xlsx` → image, pdf | A spreadsheet layout engine. A workbook needs a real layout pass — not something to fake from an embedded preview. |
 | `.pdf` → video       | Local frame assembly (ffmpeg), not bundled.                                                                        |
 | `.key` → video       | Local frame assembly (ffmpeg), not bundled.                                                                        |

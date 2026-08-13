@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { isolatedCliEnv } from './env.js';
 
 const run = promisify(execFile);
 const CLI = fileURLToPath(new URL('../../dist/cli.js', import.meta.url));
@@ -25,7 +26,7 @@ interface CliResult {
 async function cli(args: string[], options: { input?: string } = {}): Promise<CliResult> {
   try {
     const child = run('node', [CLI, ...args], {
-      env: { ...process.env, DECKRENDER_CONFIG_DIR: configDir, DECKFLOW_CONFIG_DIR: configDir },
+      env: isolatedCliEnv(configDir),
     });
     if (options.input !== undefined) {
       child.child.stdin?.end(options.input);
@@ -78,6 +79,15 @@ describe('exit codes', () => {
     expect(result.stderr).toContain('Cannot render .docx to video');
   });
 
+  it('rejects legacy .doc before making a backend request', async () => {
+    const input = path.join(workDir, 'legacy.doc');
+    await fs.writeFile(input, 'fixture');
+    const result = await cli([input, '--format', 'pdf']);
+
+    expect(result.code).toBe(2);
+    expect(result.stderr).toContain('Cannot render .doc');
+  });
+
   it('exits 2 for a combination that is planned but not built', async () => {
     const input = path.join(workDir, 'book.xlsx');
     await fs.writeFile(input, 'fixture');
@@ -109,8 +119,13 @@ describe('exit codes', () => {
   it.each([
     [['x.pptx', '--nonsense'], 'unknown flag'],
     [['--format', 'nope', 'x.pptx'], 'invalid enum value'],
+    [['x.pdf', '--width', '1.5'], 'fractional width'],
+    [['x.pdf', '--width', '32769'], 'oversized width'],
+    [['x.pdf', '--scale', '17'], 'oversized scale'],
+    [['x.pdf', '--timeout', '86401'], 'oversized timeout'],
     [['config', 'set', 'profile', 'bogus'], 'invalid config value'],
     [['config', 'set', 'width', 'abc'], 'non-numeric config value'],
+    [['config', 'set', 'width', '32769'], 'oversized config value'],
   ])('exits 2 for %j (%s)', async (args) => {
     expect((await cli(args as string[])).code).toBe(2);
   });
@@ -166,6 +181,15 @@ describe('output streams', () => {
     expect(result.code).toBe(0);
     const payload = JSON.parse(result.stdout);
     expect(payload.matrix.pptx.video).toMatchObject({ supported: true, kind: 'direct' });
+    expect(payload.matrix.ppt).toMatchObject({
+      image: expect.objectContaining({ supported: true }),
+      pdf: expect.objectContaining({ supported: false, planned: true }),
+      video: expect.objectContaining({ supported: true }),
+    });
+    expect(payload.matrix.doc).toMatchObject({
+      image: { supported: false, planned: false },
+      pdf: { supported: false, planned: false },
+    });
     expect(payload.matrix.pdf.pdf).toMatchObject({ kind: 'passthrough' });
     expect(payload.matrix.pages.image).toMatchObject({ supported: true, kind: 'local' });
     expect(payload.matrix.html.video).toMatchObject({
@@ -181,6 +205,14 @@ describe('output streams', () => {
 });
 
 describe('config', () => {
+  it('isolates every credential store from the host machine', async () => {
+    const result = await cli(['config', 'list', '--json']);
+    const payload = JSON.parse(result.stdout);
+
+    expect(payload.credentials).toMatchObject({ apiKey: null, token: null, spaceId: null });
+    expect(payload.files.deckops).toBe(path.join(configDir, 'config.json'));
+  });
+
   it('stores render defaults separately from shared credentials', async () => {
     expect((await cli(['config', 'set', 'profile', 'web'])).code).toBe(0);
 

@@ -4,6 +4,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRenderer } from '../../src/core/renderer.js';
 import { CloudEngine } from '../../src/engines/cloud.js';
+import type { RenderEngine } from '../../src/engines/engine.js';
 import type { DeckRenderError } from '../../src/errors/index.js';
 import { createFakeClient, frames, singleFile } from './fake-client.js';
 
@@ -329,6 +330,33 @@ describe('passthrough', () => {
 });
 
 describe('failure reporting', () => {
+  it('wraps an invalid custom engine artifact as render_error', async () => {
+    const engine = {
+      name: 'broken-js',
+      supports: () => true,
+      execute: async () => ({
+        artifacts: [{ page: 1, ext: '.png' }],
+        totalPages: 1,
+      }),
+    } as unknown as RenderEngine;
+
+    try {
+      await createRenderer({ engine }).render({
+        input: await fixture('custom.pdf'),
+        format: 'image',
+        out: path.join(workDir, 'custom.png'),
+      });
+      throw new Error('expected a throw');
+    } catch (error) {
+      const err = error as DeckRenderError;
+      expect(err.name).toBe('DeckRenderError');
+      expect(err.code).toBe('render_error');
+      expect(err.message).toContain('broken-js');
+      expect(err.message).toContain('artifact 1.source');
+      expect(err.message).not.toContain('ERR_INVALID_ARG_TYPE');
+    }
+  });
+
   it('surfaces a failed backend task as render_error', async () => {
     const fake = createFakeClient({
       results: { 'convertor.ppt2image': frames(1) },

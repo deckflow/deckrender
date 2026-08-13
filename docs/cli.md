@@ -78,7 +78,9 @@ Frame numbers are zero-padded to at least three digits, widening for documents p
 
 ## Sizing
 
-`--width` sets the long edge directly. `--scale` multiplies the route's own base — 1920 for slides, 1080 for PDF.
+`--width` sets the long edge directly and accepts integer values from 1 to 32768. `--scale`
+multiplies the route's own base — 1920 for slides, 1080 for PDF — and accepts values greater
+than 0 up to 16. `--timeout` accepts whole seconds from 1 to 86400.
 
 `convertor.ppt2image` only accepts 1080, 1920 or 2560, so other values snap to the nearest tier and the chosen value is reported on stderr:
 
@@ -104,7 +106,8 @@ deckrender report.pdf --pages 1,3,5-7
 deckrender deck.pptx --page 3
 ```
 
-Pages are 1-based and ranges are inclusive. Requesting a page past the end of the document is an error.
+Pages are 1-based, capped at 100000, and ranges are inclusive. Requesting a page past the end of
+the document is an error.
 
 `--pages` filters at download time — **the backend still renders every page**, so this saves bandwidth and disk, not compute or cost. It does not apply to single-file output (pdf, video) or to HTML and Markdown, which produce one image.
 

@@ -5,6 +5,12 @@ import { readConfig } from '../../config/config.js';
 import { hasCredentials, resolveCredentials, writeSharedCredentials } from '../../config/credentials.js';
 import { runCheckoutFlow, runLoginFlow } from '../../auth/login.js';
 import { inferFromOutputPath } from '../../output/naming.js';
+import {
+  MAX_RENDER_SCALE,
+  MAX_RENDER_WIDTH,
+  MAX_TIMEOUT_SECONDS,
+  assertPositiveNumber,
+} from '../../core/validation.js';
 import { layerOptions, PROFILES } from '../profiles.js';
 import { addOutputFlags, Reporter, type OutputMode } from '../output.js';
 import {
@@ -270,8 +276,12 @@ function targetLine(result: { outputs: { file: string }[] }): string {
 
 function positiveNumber(raw: string, flag: string): number {
   const value = Number(raw);
-  if (!Number.isFinite(value) || value <= 0) {
-    throw DeckRenderError.usage(`Invalid ${flag}: ${raw}. Expected a positive number.`);
-  }
+  const rules =
+    flag === '--width'
+      ? { integer: true, max: MAX_RENDER_WIDTH }
+      : flag === '--timeout'
+        ? { integer: true, max: MAX_TIMEOUT_SECONDS }
+        : { max: MAX_RENDER_SCALE };
+  assertPositiveNumber(flag, value, rules);
   return value;
 }

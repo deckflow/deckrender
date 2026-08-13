@@ -29,7 +29,9 @@ const TARGETS = ['image', 'pdf', 'video'];
 const EXPECTED = {
   pdf: { image: 'yes', pdf: 'yes', video: 'soon' },
   pptx: { image: 'yes', pdf: 'yes', video: 'yes' },
+  ppt: { image: 'yes', pdf: 'soon', video: 'yes' },
   docx: { image: 'yes', pdf: 'yes', video: 'no' },
+  doc: { image: 'no', pdf: 'no', video: 'no' },
   xlsx: { image: 'soon', pdf: 'soon', video: 'no' },
   key: { image: 'yes', pdf: 'yes', video: 'soon' },
   pages: { image: 'yes', pdf: 'yes', video: 'no' },

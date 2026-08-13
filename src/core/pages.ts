@@ -1,4 +1,5 @@
 import { DeckRenderError } from '../errors/index.js';
+import { MAX_PAGE_NUMBER } from './validation.js';
 
 /**
  * Parse a page selection: `3`, `1-5`, `1,3,5-7`.
@@ -59,8 +60,10 @@ export function parsePageSelection(spec: string): number[] {
 }
 
 function assertPositive(value: number, part: string): void {
-  if (!Number.isInteger(value) || value < 1) {
-    throw DeckRenderError.usage(`Invalid page number in "${part}". Pages are 1-based.`);
+  if (!Number.isSafeInteger(value) || value < 1 || value > MAX_PAGE_NUMBER) {
+    throw DeckRenderError.usage(
+      `Invalid page number in "${part}". Expected an integer from 1 to ${MAX_PAGE_NUMBER}.`
+    );
   }
 }
 
@@ -71,6 +74,12 @@ function assertPositive(value: number, part: string): void {
  * dropped — a typo in `--pages` should not look like a successful render.
  */
 export function applyPageSelection<T extends { page: number }>(items: T[], pages: number[]): T[] {
+  if (pages.length === 0) {
+    throw DeckRenderError.usage('Page selection cannot be empty.');
+  }
+  for (const page of pages) {
+    assertPositive(page, String(page));
+  }
   const available = new Set(items.map((item) => item.page));
   const missing = pages.filter((page) => !available.has(page));
 

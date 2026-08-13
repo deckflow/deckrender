@@ -4,7 +4,7 @@ export default defineConfig({
   entry: ['src/index.ts', 'src/cli.ts'],
   format: ['esm'],
   target: 'node18',
-  dts: true,
+  dts: { banner: '/// <reference types="node" />' },
   clean: true,
   sourcemap: true,
   splitting: false,
