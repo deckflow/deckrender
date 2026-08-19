@@ -23,21 +23,23 @@ deckrender formats --json   # machine-readable, includes the backend task chain
 
 Image output supports `png`, `jpg` and `webp`.
 
-**🕓** means planned but not built. Those fail with `not_implemented` and a message naming what is blocking them, rather than pretending the combination is impossible.
+**🕓** means planned but not built. Those fail with `not_implemented` and a message naming what is blocking them, rather than pretending the combination is impossible. What each one waits on is listed under [Coming soon](roadmap.md#coming-soon) in the roadmap.
 
-How a conversion is produced — one step or several, in the cloud or on this machine — is DeckRender's problem, not yours. `--json` reports the exact route if you want it:
+A pair with no route at all — and none planned — fails immediately with the alternatives spelled out:
+
+```
+Error: Cannot render .docx to video. Supported outputs for .docx: image, pdf.
+  Run `deckrender formats` or see docs/formats.md for the full support matrix.
+```
+
+`--json` reports the exact route a conversion took, including the intermediate steps of a chained one:
 
 ```json
 "route": ["convertor.doc2pdf", "convertor.pdf2image"]
 ```
 
-An unsupported pair fails immediately with the alternatives spelled out:
-
-```
-Error: Cannot render .pdf to video.
-  Supported outputs for .pdf: image, pdf
-  Video rendering is available for .ppt/.pptx only. See docs/roadmap.md.
-```
+Where each route runs — in the DeckFlow cloud or on your machine — is listed under
+[Where rendering happens](#where-rendering-happens) below.
 
 ## Which flags each route accepts
 
@@ -56,6 +58,27 @@ Not every option applies everywhere. What a route can honour depends on how the 
 `webp` works everywhere: it is produced by a separate conversion step rather than by the renderer itself.
 
 PDF and video output accept no sizing, encoding, quality or page options — the backend tasks have no such parameters.
+
+## Where rendering happens
+
+Most rendering runs in the DeckFlow cloud: the document is uploaded over HTTPS, converted there, and the resulting artifacts are downloaded back. Two routes never send anything anywhere.
+
+| Route                                | Where            | What leaves your machine                        |
+| ------------------------------------ | ---------------- | ----------------------------------------------- |
+| `.pages` `.numbers` → image, pdf     | your machine     | nothing — the embedded preview is extracted here |
+| `.pdf` → pdf                         | your machine     | nothing — the file is copied as-is               |
+| everything else in the matrix        | DeckFlow cloud   | the document, and any intermediate artifact      |
+
+A chained route uploads each intermediate too: `.docx → image` runs `convertor.doc2pdf`, downloads the PDF, and uploads it again for `convertor.pdf2image`. URL input is fetched by DeckRender on your machine, and it is that fetched HTML — not the URL — that is uploaded.
+
+`--json` reports which engine ran, so this is checkable rather than something to take on faith:
+
+```bash
+$ deckrender report.pages -o preview.jpg --json | jq -r .engine
+local
+```
+
+`cloud` means the bytes were uploaded; `local` and `passthrough` mean they were not. What DeckFlow does with an uploaded document — retention, processing, deletion — is the cloud service's policy, not this client's: see [deckflow.com](https://app.deckflow.com). If a document may not leave your machine, that is the question to settle first.
 
 ## Per-format notes
 

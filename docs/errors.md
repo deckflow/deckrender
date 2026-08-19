@@ -26,7 +26,7 @@ Errors go to stderr. Scripts should branch on the exit code first and parse the 
 ## JSON form
 
 ```bash
-$ deckrender report.pdf --format video --json
+$ deckrender report.docx --format video --json
 ```
 
 ```json
@@ -34,8 +34,8 @@ $ deckrender report.pdf --format video --json
   "ok": false,
   "error": {
     "code": "unsupported_format",
-    "message": "Cannot render .pdf to video. Supported outputs for .pdf: image, pdf.",
-    "hint": "Video rendering is available for .ppt/.pptx only. See docs/roadmap.md."
+    "message": "Cannot render .docx to video. Supported outputs for .docx: image, pdf.",
+    "hint": "Run `deckrender formats` or see docs/formats.md for the full support matrix."
   }
 }
 ```
@@ -48,24 +48,23 @@ The render matrix has real holes, so these exist to tell apart "impossible", "no
 
 ### `unsupported_format`
 
-No route at all. The message lists what the input _can_ become:
+No route at all, and none planned. The message lists what the input _can_ become:
 
 ```
-Error: Cannot render .pdf to video.
-  Supported outputs for .pdf: image, pdf
-  Video rendering is available for .ppt/.pptx only. See docs/roadmap.md.
+Error: Cannot render .docx to video. Supported outputs for .docx: image, pdf.
+  Run `deckrender formats` or see docs/formats.md for the full support matrix.
 ```
 
-Run `deckrender formats` for the whole matrix.
+Run `deckrender formats` for the whole matrix. A combination marked 🕓 there is
+`not_implemented` instead — `.pdf` to video, for one.
 
 ### `unsupported_option`
 
-The conversion works; that particular flag has nowhere to land. The message names the backend task responsible and, where one exists, a workaround:
+The conversion works; that particular flag has nowhere to land. The message says why, and offers a workaround where one exists:
 
 ```
 Error: --width is not supported for .key input.
-  The backend task convertor.keynote2image accepts no resolution parameters.
-  Workaround: render to PDF first, then run deckrender on the PDF.
+  Rendering .key offers no resolution control. Workaround: render to PDF first, then run deckrender on the PDF.
 ```
 
 DeckRender never accepts a flag and quietly ignores it — silently rendering something other than what you asked for is worse than failing.
@@ -113,6 +112,27 @@ deckrender config list    # shows which credential is winning, and from where
 ```
 
 `config list` is usually the fastest way to answer "why is it not using the key I just set?".
+
+### A credential you did not know you had
+
+Credentials resolve from a [five-level chain](configuration.md), which includes files
+written by the other DeckFlow CLIs. A machine that once used `deckops` or exported
+`DECKHTML_API_KEY` is **not** in guest mode, even though nothing was configured for
+DeckRender — and when that inherited credential has expired, the render fails with
+`auth_error` where guest mode would have succeeded.
+
+The 401 hint names what was sent, so the fix does not require guessing:
+
+```
+Error: Authentication failed: invalid token
+  Credentials in use: token from ~/.deckops/config.json. Run `deckrender auth login` to replace them, or remove them to render in guest mode.
+```
+
+At a terminal this rarely bites: a 401 opens the browser login and retries. It is
+scripts and agents — no TTY, or `--json` — that see the failure, so an agent running
+on a developer machine can hit it where the same code in a clean container does not.
+DeckRender does not silently fall back to guest mode: dropping to a different quota
+and workspace without being asked would hide a real authorization problem.
 
 ## Retries
 

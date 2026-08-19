@@ -1,7 +1,7 @@
 import path from 'node:path';
 import pLimit from 'p-limit';
 import { isRetriableError, type DeckClient, type DeckTask, type DeckTaskType } from '@deckops/sdk';
-import { DeckRenderError, mapSdkError } from '../errors/index.js';
+import { DeckRenderError, mapSdkError, type ErrorCode } from '../errors/index.js';
 import { applyPageSelection } from '../core/pages.js';
 import type { ProgressEvent, RenderArtifact, RenderPlan, RenderStep } from '../types.js';
 import { extensionOf, isHttpUrl, normalizeTaskResult } from './artifacts.js';
@@ -24,6 +24,13 @@ export interface CloudEngineOptions {
    * `authenticated` snapshot.
    */
   isAuthenticated?: () => boolean;
+  /**
+   * Where the credentials being sent came from, named in the 401 hint.
+   *
+   * Read on each failure rather than captured once, so that a credential
+   * replaced mid-render by an interactive login is not blamed for a later 401.
+   */
+  credentialOrigin?: () => string | undefined;
   /** Task wait timeout in seconds. */
   timeout?: number;
   /** Parallel task count for per-frame steps. */
@@ -47,14 +54,21 @@ export class CloudEngine implements RenderEngine {
 
   private readonly client: DeckClient;
   private readonly isAuthenticated: () => boolean;
+  private readonly credentialOrigin: () => string | undefined;
   private readonly timeout: number;
   private readonly limit: ReturnType<typeof pLimit>;
 
   constructor(options: CloudEngineOptions) {
     this.client = options.client;
     this.isAuthenticated = options.isAuthenticated ?? (() => options.authenticated);
+    this.credentialOrigin = options.credentialOrigin ?? (() => undefined);
     this.timeout = options.timeout ?? DEFAULT_TIMEOUT_SECONDS;
     this.limit = pLimit(options.concurrency ?? DEFAULT_CONCURRENCY);
+  }
+
+  /** `mapSdkError` with this engine's credential context attached. */
+  private mapError(error: unknown, fallback?: ErrorCode): DeckRenderError {
+    return mapSdkError(error, fallback, { credentialOrigin: this.credentialOrigin() });
   }
 
   supports(plan: RenderPlan): boolean {
@@ -175,7 +189,7 @@ export class CloudEngine implements RenderEngine {
         await this.client.tasks.start(task.id);
       }
     } catch (error) {
-      throw mapSdkError(error);
+      throw this.mapError(error);
     }
 
     report(ctx, { phase: 'wait', message: `Running ${type}`, task: type });
@@ -191,7 +205,7 @@ export class CloudEngine implements RenderEngine {
       // `tasks.wait` rejects on a failed task rather than returning it, so the
       // task type and id have to be reattached here. Without this the user gets
       // a bare "Task failed: Unknown error" and nothing to investigate with.
-      throw enrichTaskFailure(error, type, taskId);
+      throw enrichTaskFailure(this.mapError(error), type, taskId, error);
     }
 
     // Defensive: the SDK throws today, but a future version returning the
@@ -206,7 +220,7 @@ export class CloudEngine implements RenderEngine {
     try {
       payload = await this.client.tasks.down(task.id);
     } catch (error) {
-      throw mapSdkError(error, 'conversion_error');
+      throw this.mapError(error, 'conversion_error');
     }
 
     const artifacts = normalizeTaskResult(payload);
@@ -259,7 +273,7 @@ export class CloudEngine implements RenderEngine {
           : await this.client.files.upload(source.bytes, { name: source.name });
       return result.id;
     } catch (error) {
-      throw mapSdkError(error, 'conversion_error');
+      throw this.mapError(error, 'conversion_error');
     }
   }
 
@@ -313,8 +327,12 @@ function initialCarrier(ctx: ExecuteContext): Carrier {
  * "the conversion did not succeed" case gets rewritten, because that is the one
  * the backend reports without any detail.
  */
-function enrichTaskFailure(error: unknown, type: DeckTaskType, taskId: string): DeckRenderError {
-  const mapped = mapSdkError(error);
+function enrichTaskFailure(
+  mapped: DeckRenderError,
+  type: DeckTaskType,
+  taskId: string,
+  cause: unknown
+): DeckRenderError {
   if (mapped.code !== 'render_error') {
     return mapped;
   }
@@ -323,7 +341,7 @@ function enrichTaskFailure(error: unknown, type: DeckTaskType, taskId: string): 
   return DeckRenderError.render(`Task ${type} failed: ${detail}`, {
     hint: `Inspect the task with: deckops task get ${taskId}`,
     ...(mapped.requestId ? { requestId: mapped.requestId } : {}),
-    cause: error,
+    cause,
   });
 }
 

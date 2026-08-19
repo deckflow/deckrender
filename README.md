@@ -90,7 +90,7 @@ deckrender formats
 
 Image output supports `png`, `jpg` and `webp` via `--image-format`.
 
-**🕓** is planned but not built; those report `not_implemented` with a message naming what is blocking them. Unsupported pairs fail with a clear message rather than producing something approximate.
+**🕓** is planned but not built; those report `not_implemented` with a message naming what is blocking them — the full list is under [Coming soon](docs/roadmap.md#coming-soon). Unsupported pairs fail with a clear message rather than producing something approximate.
 
 Pages and Numbers render their embedded first-page preview — see [`docs/formats.md`](docs/formats.md) for that and the other per-format notes.
 
@@ -169,7 +169,19 @@ Input (file | URL | stdin)
 
 Rendering is performed by [`@deckops/sdk`](https://www.npmjs.com/package/@deckops/sdk). DeckRender contributes the input model, the render routing, artifact naming, and a stable output contract.
 
-Most rendering runs in the DeckFlow cloud; a few formats are handled on your machine. Which is which is an implementation detail — `deckrender formats` reports what works, and `--json` reports how it was produced if you need to know.
+### Where rendering happens
+
+**Most rendering runs in the DeckFlow cloud**: the document is uploaded over HTTPS, converted there, and the artifacts are downloaded back. Two routes never send anything anywhere:
+
+| Route                            | Where          | What leaves your machine                         |
+| -------------------------------- | -------------- | ------------------------------------------------ |
+| `.pages` `.numbers` → image, pdf | your machine   | nothing — the embedded preview is extracted here |
+| `.pdf` → pdf                     | your machine   | nothing — the file is copied as-is               |
+| everything else in the matrix    | DeckFlow cloud | the document, and any intermediate artifact      |
+
+`--json` reports the `engine` that ran — `cloud`, `local` or `passthrough` — so you can check rather than assume. What DeckFlow does with an uploaded document is the cloud service's policy, not this client's. If your documents cannot leave your machine, settle that before adopting DeckRender; a local engine is on the [roadmap](docs/roadmap.md) but not here yet.
+
+Full detail, including chained routes and URL input: [`docs/formats.md`](docs/formats.md#where-rendering-happens).
 
 ## Development
 

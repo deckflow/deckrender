@@ -8,7 +8,12 @@ import type { EngineOutput, RenderEngine } from '../engines/engine.js';
 import { inputBaseName, resolveInput } from '../input/resolve.js';
 import { DEFAULT_EXTENSION } from '../output/naming.js';
 import { writeArtifacts } from '../output/writer.js';
-import { hasCredentials, resolveCredentials, type CredentialOverrides } from '../config/credentials.js';
+import {
+  describeCredentialOrigin,
+  hasCredentials,
+  resolveCredentials,
+  type CredentialOverrides,
+} from '../config/credentials.js';
 import type { RenderArtifact, RenderOptions, RenderResult } from '../types.js';
 import { parsePageSelection } from './pages.js';
 import { buildPlan } from './plan.js';
@@ -155,11 +160,15 @@ async function createCloudEngine(
   // No credentials is not an error: the backend accepts guest tasks, which the
   // engine starts explicitly. A 401 later is what surfaces as auth_error.
   let authenticated = hasCredentials(credentials);
+  let credentialOrigin = describeCredentialOrigin(credentials);
 
   const onUnauthorized = rendererOptions.onUnauthorized
     ? async () => {
         const authorization = await rendererOptions.onUnauthorized!();
         authenticated = true;
+        // The credential that was rejected has been replaced, so it is no
+        // longer the one to name if a later call fails.
+        credentialOrigin = undefined;
         return authorization;
       }
     : undefined;
@@ -177,6 +186,7 @@ async function createCloudEngine(
     client,
     authenticated,
     isAuthenticated: () => authenticated,
+    credentialOrigin: () => credentialOrigin,
     ...(options.timeout !== undefined ? { timeout: options.timeout } : {}),
   });
 }

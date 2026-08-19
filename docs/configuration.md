@@ -50,6 +50,8 @@ Environment variables, in order:
 
 Independent resolution means an API key from the environment can combine with a `spaceId` left behind by a `deckops` login.
 
+Levels 2–4 are inherited rather than chosen, so a machine set up for another DeckFlow tool is not in guest mode even when nothing was configured for DeckRender. If that inherited credential has expired, the render fails with `auth_error` instead of falling back to guest mode — see [A credential you did not know you had](errors.md#a-credential-you-did-not-know-you-had). `deckrender config list` shows what is in effect before you hit it.
+
 ## Seeing what is in effect
 
 When something authenticates as the wrong account, this is the command that answers why:

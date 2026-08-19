@@ -161,6 +161,39 @@ export function hasCredentials(resolved: ResolvedCredentials): boolean {
   return Boolean(resolved.apiKey || resolved.token);
 }
 
+function sourceLabel(source: CredentialSource): string {
+  if (source === 'flag') {
+    return 'a command-line flag';
+  }
+  if (source === 'default') {
+    return 'the built-in default';
+  }
+  const [kind, ...rest] = source.split(':');
+  const value = rest.join(':');
+  return kind === 'env' ? `$${value}` : value;
+}
+
+/**
+ * Describe which credentials are being sent, and where they came from.
+ *
+ * The resolution chain picks up credentials nobody configured for DeckRender —
+ * another DeckFlow tool's `~/.deckops/config.json`, an exported
+ * `DECKHTML_API_KEY`. When one of those is expired the render fails with the
+ * backend's bare "Authentication failed" instead of falling back to guest mode,
+ * and nothing points at the file to clean up. Returns undefined in guest mode,
+ * where there is no credential to name.
+ */
+export function describeCredentialOrigin(resolved: ResolvedCredentials): string | undefined {
+  const parts: string[] = [];
+  if (resolved.apiKey && resolved.sources.apiKey) {
+    parts.push(`API key from ${sourceLabel(resolved.sources.apiKey)}`);
+  }
+  if (resolved.token && resolved.sources.token) {
+    parts.push(`token from ${sourceLabel(resolved.sources.token)}`);
+  }
+  return parts.length > 0 ? parts.join(' and ') : undefined;
+}
+
 /**
  * Merge values into `~/.deckflow/credentials`.
  *

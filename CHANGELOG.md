@@ -6,6 +6,26 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-08-19
+
+### Added
+
+- Name the credential in `auth_error` hints. Credentials resolve from files other DeckFlow
+  tools write, so a stale `~/.deckops/config.json` token fails a render that guest mode would
+  have completed, with nothing pointing at the file to clean up. The 401 hint now reports which
+  credential was sent and where it came from. `describeCredentialOrigin` is exported, and
+  `mapSdkError` takes an optional `SdkErrorContext` third argument.
+- Document where each route runs. `README.md` and `docs/formats.md` list which routes upload the
+  document to the DeckFlow cloud and which stay on the machine, instead of calling the split an
+  implementation detail.
+
+### Fixed
+
+- Correct the error examples in `docs/errors.md` and `docs/formats.md`: `.pdf` to video is
+  `not_implemented`, not `unsupported_format`, and the `unsupported_option` hint no longer quotes
+  a message the CLI does not emit.
+- Link the 🕓 matrix entries to the roadmap section listing what blocks each one.
+
 ## [0.1.1] - 2026-08-13
 
 ### Fixed
@@ -79,6 +99,7 @@ output and diffs the result against the documented matrix. Several conversions
 that looked plausible from the type definitions turned out not to work, so the
 matrix reflects measurement rather than inference.
 
-[Unreleased]: https://github.com/deckflow/deckrender/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/deckflow/deckrender/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/deckflow/deckrender/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/deckflow/deckrender/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/deckflow/deckrender/releases/tag/v0.1.0

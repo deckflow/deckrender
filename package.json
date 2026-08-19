@@ -1,6 +1,6 @@
 {
   "name": "@deckflow/deckrender",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Render any document format into visual artifacts. PPTX, PDF, DOCX, Keynote, HTML and Markdown to images, PDF or video.",
   "type": "module",
   "main": "./dist/index.js",

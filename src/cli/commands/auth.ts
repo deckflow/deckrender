@@ -5,6 +5,7 @@ import { runLoginFlow } from '../../auth/login.js';
 import { mapSdkError } from '../../errors/index.js';
 import {
   credentialsPath,
+  describeCredentialOrigin,
   displayPath,
   hasCredentials,
   maskSecret,
@@ -73,7 +74,8 @@ export function registerAuthCommands(program: Command, modeOf: (cmd: Command) =>
         try {
           await client.tasks.list({ maxResults: 1 });
         } catch (error) {
-          throw mapSdkError(error, 'render_error');
+          const origin = describeCredentialOrigin(credentials);
+          throw mapSdkError(error, 'render_error', origin ? { credentialOrigin: origin } : {});
         }
 
         const lines = [chalk.green('Authenticated.')];

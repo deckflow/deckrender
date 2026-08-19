@@ -3,6 +3,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
+  describeCredentialOrigin,
   hasCredentials,
   maskSecret,
   readSharedCredentials,
@@ -188,6 +189,46 @@ describe('writeSharedCredentials', () => {
     const resolved = await resolveCredentials();
     expect(resolved.apiKey).toBe('stored-key');
     expect(resolved.spaceId).toBe('stored-space');
+  });
+});
+
+/**
+ * A credential picked up from another DeckFlow tool is the one a user does not
+ * know they have. When it is stale the render fails instead of running as a
+ * guest, so the 401 has to name the file it came from.
+ */
+describe('describeCredentialOrigin', () => {
+  it('names nothing in guest mode', async () => {
+    expect(describeCredentialOrigin(await resolveCredentials())).toBeUndefined();
+  });
+
+  it('names the DeckOps config a token was inherited from', async () => {
+    await writeDeckops({ token: 'stale-deckops-token' });
+    expect(describeCredentialOrigin(await resolveCredentials())).toBe('token from ~/.deckops/config.json');
+  });
+
+  it('names the shared credential file', async () => {
+    await writeDeckflow({ apiKey: 'shared-key' });
+    expect(describeCredentialOrigin(await resolveCredentials())).toBe('API key from ~/.deckflow/credentials');
+  });
+
+  it('names the environment variable that won', async () => {
+    process.env.DECKHTML_API_KEY = 'deckhtml-key';
+    expect(describeCredentialOrigin(await resolveCredentials())).toBe('API key from $DECKHTML_API_KEY');
+  });
+
+  it('names both when a key and a token are sent together', async () => {
+    process.env.DECKFLOW_API_KEY = 'env-key';
+    await writeDeckops({ token: 'deckops-token' });
+    expect(describeCredentialOrigin(await resolveCredentials())).toBe(
+      'API key from $DECKFLOW_API_KEY and token from ~/.deckops/config.json'
+    );
+  });
+
+  it('describes an explicit override without naming a file', async () => {
+    expect(describeCredentialOrigin(await resolveCredentials({ token: 'passed-in' }))).toBe(
+      'token from a command-line flag'
+    );
   });
 });
 

@@ -44,6 +44,7 @@ export { DEFAULT_EXTENSION, frameName, inferFromOutputPath, templatedName } from
 
 export {
   DEFAULT_API_BASE,
+  describeCredentialOrigin,
   hasCredentials,
   readSharedCredentials,
   resolveCredentials,
@@ -63,6 +64,7 @@ export {
   isDeckRenderError,
   mapSdkError,
   type ErrorCode,
+  type SdkErrorContext,
 } from './errors/index.js';
 
 export * from './types.js';

@@ -19,6 +19,7 @@ export {
   SPACE_ID_ENV_VARS,
   SharedCredentialsSchema,
   TOKEN_ENV_VARS,
+  describeCredentialOrigin,
   displayPath,
   hasCredentials,
   maskSecret,
