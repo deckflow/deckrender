@@ -6,6 +6,16 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-08-21
+
+### Fixed
+
+- Pin `@deckops/sdk` to `0.7.3`, which is installable. `0.7.4` declares a dependency on
+  `@deckflow/presentation@^0.3.5`, and that package is not on npm — so `npm install` and
+  `npx @deckflow/deckrender` failed with `E404` for anyone whose cache did not already hold an
+  older resolution. The `^0.7.3` range meant every published version of DeckRender inherited this,
+  not just the latest. The pin comes off once a resolvable `@deckops/sdk` is released.
+
 ## [0.2.0] - 2026-08-21
 
 ### Removed
@@ -150,7 +160,8 @@ output and diffs the result against the documented matrix. Several conversions
 that looked plausible from the type definitions turned out not to work, so the
 matrix reflects measurement rather than inference.
 
-[Unreleased]: https://github.com/deckflow/deckrender/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/deckflow/deckrender/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/deckflow/deckrender/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/deckflow/deckrender/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/deckflow/deckrender/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/deckflow/deckrender/compare/v0.1.0...v0.1.1

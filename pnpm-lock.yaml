@@ -9,7 +9,7 @@ importers:
   .:
     dependencies:
       '@deckops/sdk':
-        specifier: ^0.7.3
+        specifier: 0.7.3
         version: 0.7.3
       '@types/node':
         specifier: ^20.10.0
