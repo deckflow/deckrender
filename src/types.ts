@@ -39,10 +39,10 @@ export type ProfileName = (typeof PROFILE_NAMES)[number];
 /**
  * A step in a RenderPlan.
  *
- * `passthrough` copies the input unchanged. `local:*` steps run on this machine
- * with no backend call — today that is only the iWork preview extractor.
+ * Every step but `passthrough` is a DeckOps task: rendering happens in the
+ * cloud. `passthrough` copies the input unchanged, which is not a render.
  */
-export type RenderStepTask = DeckTaskType | 'passthrough' | 'local:iwork-preview';
+export type RenderStepTask = DeckTaskType | 'passthrough';
 
 export interface RenderStep {
   task: RenderStepTask;
@@ -55,7 +55,7 @@ export interface RenderStep {
   params: Record<string, unknown>;
 }
 
-export type RouteKind = 'direct' | 'derived' | 'passthrough' | 'local';
+export type RouteKind = 'direct' | 'derived' | 'passthrough';
 
 /**
  * The render pipeline IR.

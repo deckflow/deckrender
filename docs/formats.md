@@ -16,14 +16,16 @@ deckrender formats --json   # machine-readable, includes the backend task chain
 | `.docx`                 | ✅      | ✅    | —       |
 | `.doc`                  | —       | —     | —       |
 | `.xlsx`                 | 🕓      | 🕓    | —       |
-| `.pages`                | ✅      | ✅    | —       |
-| `.numbers`              | ✅      | ✅    | —       |
+| `.pages`                | 🕓      | 🕓    | —       |
+| `.numbers`              | 🕓      | 🕓    | —       |
 | `.html` `.htm` and URLs | ✅      | ✅    | ✅      |
 | `.md`                   | ✅      | —     | —       |
 
 Image output supports `png`, `jpg` and `webp`.
 
-**🕓** means planned but not built. Those fail with `not_implemented` and a message naming what is blocking them, rather than pretending the combination is impossible. What each one waits on is listed under [Coming soon](roadmap.md#coming-soon) in the roadmap.
+**🕓** means the DeckFlow cloud cannot convert it yet. Those fail with `not_implemented` and a message naming the missing backend task, rather than pretending the combination is impossible. What each one waits on is listed under [Coming soon](roadmap.md#coming-soon) in the roadmap.
+
+Every ✅ in this table is a cloud conversion. DeckRender renders nothing itself, so the matrix is exactly what the backend can do — no more, and nothing approximated locally to widen it. See [Where rendering happens](#where-rendering-happens).
 
 A pair with no route at all — and none planned — fails immediately with the alternatives spelled out:
 
@@ -38,22 +40,18 @@ Error: Cannot render .docx to video. Supported outputs for .docx: image, pdf.
 "route": ["convertor.doc2pdf", "convertor.pdf2image"]
 ```
 
-Where each route runs — in the DeckFlow cloud or on your machine — is listed under
-[Where rendering happens](#where-rendering-happens) below.
-
 ## Which flags each route accepts
 
 Not every option applies everywhere. What a route can honour depends on how the image is produced, which is why `docx → image` accepts `--width` while `docx → pdf` does not.
 
-| Input → image       | `--width` / `--scale`        | `--image-format` | `--pages`   |
-| ------------------- | ---------------------------- | ---------------- | ----------- |
-| `.pptx` `.ppt`      | ✅ snapped to 1080/1920/2560 | png, jpg, webp   | ✅          |
-| `.pdf`              | ✅ any value                 | png, jpg, webp   | ✅          |
-| `.docx`             | ✅ any value                 | png, jpg, webp   | ✅          |
-| `.key`              | ✗                            | png, webp        | ✅          |
-| `.html` and URLs    | ✅                           | png, webp        | ✗ one image |
-| `.md`               | ✅                           | png, webp        | ✗ one image |
-| `.pages` `.numbers` | ✗                            | jpg only         | ✗ one image |
+| Input → image    | `--width` / `--scale`        | `--image-format` | `--pages`   |
+| ---------------- | ---------------------------- | ---------------- | ----------- |
+| `.pptx` `.ppt`   | ✅ snapped to 1080/1920/2560 | png, jpg, webp   | ✅          |
+| `.pdf`           | ✅ any value                 | png, jpg, webp   | ✅          |
+| `.docx`          | ✅ any value                 | png, jpg, webp   | ✅          |
+| `.key`           | ✗                            | png, webp        | ✅          |
+| `.html` and URLs | ✅                           | png, webp        | ✗ one image |
+| `.md`            | ✅                           | png, webp        | ✗ one image |
 
 `webp` works everywhere: it is produced by a separate conversion step rather than by the renderer itself.
 
@@ -61,24 +59,25 @@ PDF and video output accept no sizing, encoding, quality or page options — the
 
 ## Where rendering happens
 
-Most rendering runs in the DeckFlow cloud: the document is uploaded over HTTPS, converted there, and the resulting artifacts are downloaded back. Two routes never send anything anywhere.
+**Rendering happens in the DeckFlow cloud.** The document is uploaded over HTTPS, converted there, and the resulting artifacts are downloaded back. There is no local render path and no local fallback: if the backend cannot convert something, DeckRender says so instead of approximating it here.
 
-| Route                                | Where            | What leaves your machine                        |
-| ------------------------------------ | ---------------- | ----------------------------------------------- |
-| `.pages` `.numbers` → image, pdf     | your machine     | nothing — the embedded preview is extracted here |
-| `.pdf` → pdf                         | your machine     | nothing — the file is copied as-is               |
-| everything else in the matrix        | DeckFlow cloud   | the document, and any intermediate artifact      |
+| Route                    | Where          | What leaves your machine                    |
+| ------------------------ | -------------- | ------------------------------------------- |
+| everything in the matrix | DeckFlow cloud | the document, and any intermediate artifact |
+| `.pdf` → pdf             | your machine   | nothing — the file is copied as-is          |
+
+`.pdf → pdf` is the single exception, and it is not a render: the input is already in the target format, so the file is copied. No backend has a task for it, and uploading a PDF to get the same PDF back would be pure waste.
 
 A chained route uploads each intermediate too: `.docx → image` runs `convertor.doc2pdf`, downloads the PDF, and uploads it again for `convertor.pdf2image`. URL input is fetched by DeckRender on your machine, and it is that fetched HTML — not the URL — that is uploaded.
 
 `--json` reports which engine ran, so this is checkable rather than something to take on faith:
 
 ```bash
-$ deckrender report.pages -o preview.jpg --json | jq -r .engine
-local
+$ deckrender deck.pptx -o out/ --json | jq -r .engine
+cloud
 ```
 
-`cloud` means the bytes were uploaded; `local` and `passthrough` mean they were not. What DeckFlow does with an uploaded document — retention, processing, deletion — is the cloud service's policy, not this client's: see [deckflow.com](https://app.deckflow.com). If a document may not leave your machine, that is the question to settle first.
+`cloud` means the bytes were uploaded; `passthrough` means they were not. What DeckFlow does with an uploaded document — retention, processing, deletion — is the cloud service's policy, not this client's: see [deckflow.com](https://app.deckflow.com). **If a document may not leave your machine, DeckRender is not the tool for it** — settle that before adopting it.
 
 ## Per-format notes
 
@@ -87,28 +86,30 @@ cases where the result differs from a plain full-fidelity render.
 
 ### Legacy Office formats
 
-Legacy PowerPoint `.ppt` files render to images and video. PDF output is planned but not currently
-supported: the reliable route needs to normalize `.ppt` to `.pptx` before PDF conversion.
+Legacy PowerPoint `.ppt` files render to images and video. PDF output waits on the backend: the
+reliable route normalizes `.ppt` to `.pptx` before PDF conversion, and no task does that today.
 
-Legacy Word `.doc` files are not supported by the backend converter. Save them as `.docx` or export
+Legacy Word `.doc` files have no backend converter at all. Save them as `.docx` or export
 them to PDF before rendering.
 
-### Pages and Numbers — first page only
+### Pages and Numbers — not yet
 
-These render the preview iWork embeds in the document, which covers the **first
-page only**, at whatever resolution iWork saved. `--width`, `--scale`,
-`--quality` and `--image-format` have nothing to act on; `--format pdf` returns
-that single page as a PDF.
+`.pages` and `.numbers` are recognized but not renderable: the DeckFlow cloud has
+no converter for either, so both report `not_implemented`.
 
-Both shapes iWork writes are accepted — a single file, and the directory bundle
-Finder shows as one document:
+They are deliberately not backed by the first-page preview iWork embeds in every
+document. That preview is a thumbnail, not a render — one page, at whatever size
+iWork happened to save — and answering `--format pdf` with it would report
+success for something the user did not ask for. A converter upstream is the only
+fix, and it is on the [roadmap](roadmap.md#coming-soon).
 
-```bash
-deckrender report.pages -o preview.jpg
-deckrender ~/Documents/report.pages -o preview.pdf   # directory bundle
-```
+In the meantime, export to PDF, PPTX or DOCX from Pages or Numbers and render that.
 
-Keynote is unaffected: `.key` renders every slide.
+Keynote is unaffected: `.key` has a cloud converter and renders every slide.
+
+iWork can also save a document as a *directory bundle* that Finder shows as a
+single file. There is nothing to upload in that shape, so DeckRender rejects it
+and says how to re-save it as a single file.
 
 ### HTML to PDF and video — laid out as slides
 

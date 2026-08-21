@@ -1,8 +1,7 @@
 import path from 'node:path';
 import { createDeck, type DeckClient } from '@deckops/sdk';
-import { DeckRenderError } from '../errors/index.js';
+import { credentialsRejected, DeckRenderError } from '../errors/index.js';
 import { CloudEngine } from '../engines/cloud.js';
-import { LocalEngine } from '../engines/local.js';
 import { validateEngineOutput } from '../engines/validate.js';
 import type { EngineOutput, RenderEngine } from '../engines/engine.js';
 import { inputBaseName, resolveInput } from '../input/resolve.js';
@@ -81,7 +80,7 @@ async function runRender(options: RenderOptions, rendererOptions: RendererOption
     warn(`via ${route} (${plan.steps.length} steps)`);
   }
 
-  const executed = await executePlan(plan, input, options, rendererOptions);
+  const executed = await executePlan(plan, input, options, rendererOptions, warn);
 
   options.onProgress?.({ phase: 'write', message: 'Writing artifacts' });
   const written = await writeArtifacts(executed.artifacts, {
@@ -108,7 +107,8 @@ async function executePlan(
   plan: ReturnType<typeof buildPlan>['plan'],
   input: Awaited<ReturnType<typeof resolveInput>>,
   options: RenderOptions,
-  rendererOptions: RendererOptions
+  rendererOptions: RendererOptions,
+  warn: (message: string) => void
 ): Promise<EngineOutput & { engine: string }> {
   // Passthrough: the input is already in the target format, so no backend work
   // and no upload — just hand the local file to the writer.
@@ -124,69 +124,156 @@ async function executePlan(
     return { artifacts: [artifact], totalPages: 1, engine: 'passthrough' };
   }
 
-  // Local routes never touch the network, so they must not be replaced by an
-  // injected cloud client — that would send an unsupported format upstream.
-  const engine =
-    plan.kind === 'local'
-      ? new LocalEngine()
-      : (rendererOptions.engine ?? (await createCloudEngine(options, rendererOptions)));
+  // Everything else renders in the cloud. DeckRender ships no local renderer:
+  // a format the backend cannot convert is reported as unsupported rather than
+  // approximated here.
+  const selection: EngineSelection = rendererOptions.engine
+    ? { engine: rendererOptions.engine }
+    : await createCloudEngine(options, rendererOptions);
 
+  const { engine } = selection;
   if (!engine.supports(plan)) {
     throw DeckRenderError.render(`The ${engine.name} engine cannot execute this route.`);
   }
 
-  const rawOutput: unknown = await engine.execute(plan, {
+  const context = {
     input,
     ...(options.onProgress ? { onProgress: options.onProgress } : {}),
-  });
-  const output = validateEngineOutput(engine.name, rawOutput);
+  };
 
+  try {
+    return await run(engine, plan, context);
+  } catch (error) {
+    const guest = credentialsRejected(error) ? selection.guestFallback?.() : undefined;
+    if (!guest) {
+      throw error;
+    }
+    warn(
+      `The backend rejected the ${guest.origin}, so it is being ignored and the render retried ` +
+        'in guest mode, which is rate-limited. Run `deckrender auth login` for full access, or ' +
+        '`deckrender config list` to see where that credential came from.'
+    );
+    return run(guest.engine, plan, context);
+  }
+}
+
+async function run(
+  engine: RenderEngine,
+  plan: ReturnType<typeof buildPlan>['plan'],
+  context: { input: Awaited<ReturnType<typeof resolveInput>>; onProgress?: RenderOptions['onProgress'] }
+): Promise<EngineOutput & { engine: string }> {
+  const rawOutput: unknown = await engine.execute(plan, context);
+  const output = validateEngineOutput(engine.name, rawOutput);
   return { ...output, engine: engine.name };
 }
 
+interface EngineSelection {
+  engine: RenderEngine;
+  /**
+   * Rebuild the engine with no credentials at all.
+   *
+   * Present only when credentials were sent in the first place, and fires at
+   * most once. Returns the origin of the credential being dropped so the
+   * warning can name the file or variable to clean up.
+   */
+  guestFallback?: () => { engine: RenderEngine; origin: string } | undefined;
+}
+
+/**
+ * Build the cloud engine, and the guest engine to fall back to.
+ *
+ * A credential the backend rejects is not a credential: the render continues as
+ * a guest rather than failing, because leftover state on a machine — an expired
+ * `deckrender auth login`, a token another DeckFlow tool wrote — must not break
+ * the promise that rendering works with no setup at all. The warning names what
+ * was dropped, so this is never silent.
+ *
+ * The interactive login therefore hangs off the *guest* client, not the
+ * credentialed one: a bad credential is answered with guest mode, and only a
+ * backend that refuses guests too is worth interrupting the user for.
+ */
 async function createCloudEngine(
   options: RenderOptions,
   rendererOptions: RendererOptions
-): Promise<RenderEngine> {
+): Promise<EngineSelection> {
+  const timeout = options.timeout !== undefined ? { timeout: options.timeout } : {};
+
   if (rendererOptions.client) {
-    return new CloudEngine({
-      client: rendererOptions.client,
-      authenticated: true,
-      ...(options.timeout !== undefined ? { timeout: options.timeout } : {}),
-    });
+    // A caller-supplied client owns its own credentials, so there is nothing
+    // here to second-guess and nothing to fall back to.
+    return {
+      engine: new CloudEngine({ client: rendererOptions.client, authenticated: true, ...timeout }),
+    };
   }
 
   const credentials = await resolveCredentials(rendererOptions);
-  // No credentials is not an error: the backend accepts guest tasks, which the
-  // engine starts explicitly. A 401 later is what surfaces as auth_error.
-  let authenticated = hasCredentials(credentials);
-  let credentialOrigin = describeCredentialOrigin(credentials);
 
-  const onUnauthorized = rendererOptions.onUnauthorized
-    ? async () => {
-        const authorization = await rendererOptions.onUnauthorized!();
-        authenticated = true;
-        // The credential that was rejected has been replaced, so it is no
-        // longer the one to name if a later call fails.
-        credentialOrigin = undefined;
-        return authorization;
-      }
-    : undefined;
+  /**
+   * An engine carrying nothing but the API base.
+   *
+   * The backend treats a credential-free request as a rate-limited guest and
+   * parks its tasks until they are started explicitly, which is what
+   * `authenticated: false` tells the engine to do. A login part-way through
+   * flips that, so the flag is read live rather than captured — starting a task
+   * the backend already started fails.
+   */
+  const guestEngine = (): RenderEngine => {
+    let authenticated = false;
+    const onUnauthorized = rendererOptions.onUnauthorized
+      ? async () => {
+          const authorization = await rendererOptions.onUnauthorized!();
+          authenticated = true;
+          return authorization;
+        }
+      : undefined;
+
+    return new CloudEngine({
+      client: createDeck({
+        root: credentials.apiBase,
+        ...(onUnauthorized ? { onUnauthorized } : {}),
+        ...(rendererOptions.onPaymentRequired
+          ? { onPaymentRequired: rendererOptions.onPaymentRequired }
+          : {}),
+      }),
+      authenticated: false,
+      isAuthenticated: () => authenticated,
+      ...timeout,
+    });
+  };
+
+  // Nothing to send: this is guest mode from the start, with nothing to drop.
+  if (!hasCredentials(credentials)) {
+    return { engine: guestEngine() };
+  }
 
   const client = createDeck({
     root: credentials.apiBase,
     ...(credentials.token ? { token: credentials.token } : {}),
     ...(credentials.apiKey ? { apiKey: credentials.apiKey } : {}),
     ...(credentials.spaceId ? { spaceId: credentials.spaceId } : {}),
-    ...(onUnauthorized ? { onUnauthorized } : {}),
     ...(rendererOptions.onPaymentRequired ? { onPaymentRequired: rendererOptions.onPaymentRequired } : {}),
   });
 
-  return new CloudEngine({
-    client,
-    authenticated,
-    isAuthenticated: () => authenticated,
-    credentialOrigin: () => credentialOrigin,
-    ...(options.timeout !== undefined ? { timeout: options.timeout } : {}),
-  });
+  let dropped = false;
+
+  return {
+    engine: new CloudEngine({
+      client,
+      authenticated: true,
+      credentialOrigin: () => describeCredentialOrigin(credentials),
+      ...timeout,
+    }),
+    guestFallback: () => {
+      if (dropped) {
+        return undefined;
+      }
+      dropped = true;
+      // The spaceId belongs to the rejected credential's workspace, so it is
+      // left behind with it — sending it as a guest earns a 403.
+      return {
+        engine: guestEngine(),
+        origin: describeCredentialOrigin(credentials) ?? 'stored credential',
+      };
+    },
+  };
 }

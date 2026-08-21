@@ -28,7 +28,7 @@ export function registerFormatsCommand(program: Command, modeOf: (cmd: Command) 
       lines.push(
         '',
         `${chalk.green('yes')}   supported`,
-        `${chalk.magenta('soon')}  planned, not built yet`,
+        `${chalk.magenta('soon')}  the DeckFlow cloud cannot convert this yet`,
         chalk.dim('—     not supported'),
         '',
         chalk.dim('Image output also supports --image-format png|jpg|webp.'),
@@ -43,10 +43,9 @@ export function registerFormatsCommand(program: Command, modeOf: (cmd: Command) 
  * One matrix cell.
  *
  * Deliberately says only whether the combination works. How it is produced —
- * one backend task, a chain of them, or an engine on this machine — is an
- * implementation detail that would only invite users to read some supported
- * routes as second class. `--json` still carries the full route for tooling
- * that needs it.
+ * one backend task or a chain of them — is an implementation detail that would
+ * only invite users to read some supported routes as second class. `--json`
+ * still carries the full route for tooling that needs it.
  */
 function cell(source: SourceFormat, target: TargetFormat): string {
   // Pad before colouring: ANSI escapes would otherwise count toward width.

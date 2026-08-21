@@ -22,7 +22,7 @@ export function buildProgram(): Command {
 
   program
     .name('deckrender')
-    .description('Render any document format into visual artifacts')
+    .description('Render PPTX, PDF, DOCX, Keynote, HTML and Markdown into images, PDF or video')
     .version(VERSION, '--version', 'Show version information')
     .enablePositionalOptions()
     .showHelpAfterError()

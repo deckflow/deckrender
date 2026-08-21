@@ -77,10 +77,7 @@ export function buildPlan(input: PlanInput): PlanResult {
   const effective = validateOptions(input, route.tasks, warnings);
 
   const tasks = [...route.tasks];
-  // A local route produces a JPEG, so webp would need a converter we do not
-  // have offline. Everything else can pick up the trailing conversion step.
-  const wantsWebp =
-    effective.target === 'image' && effective.imageFormat === 'webp' && route.kind !== 'local';
+  const wantsWebp = effective.target === 'image' && effective.imageFormat === 'webp';
   if (wantsWebp) {
     tasks.push('image.convertWebp');
   }
@@ -95,8 +92,7 @@ export function buildPlan(input: PlanInput): PlanResult {
     })),
   ];
 
-  const kind =
-    route.kind === 'passthrough' || route.kind === 'local' ? route.kind : wantsWebp ? 'derived' : route.kind;
+  const kind = route.kind === 'passthrough' ? route.kind : wantsWebp ? 'derived' : route.kind;
 
   return {
     plan: {
@@ -117,15 +113,13 @@ function fixedSteps(kind: RouteKind): RenderStep[] | undefined {
   if (kind === 'passthrough') {
     return [{ task: 'passthrough', fanout: 'single', params: {} }];
   }
-  if (kind === 'local') {
-    return [{ task: 'local:iwork-preview', fanout: 'single', params: {} }];
-  }
   return undefined;
 }
 
 function unsupportedFormat(source: SourceFormat, target: TargetFormat): DeckRenderError {
-  // "Planned but not built" reads very differently from "impossible", and the
-  // user needs to know which one they hit before deciding on a workaround.
+  // "The cloud cannot do this yet" reads very differently from "impossible",
+  // and the user needs to know which one they hit before deciding on a
+  // workaround.
   const planned = plannedReason(source, target);
   if (planned) {
     return DeckRenderError.notImplemented(

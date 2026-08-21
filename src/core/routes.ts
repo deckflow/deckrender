@@ -8,10 +8,14 @@ import type { RouteKind, SourceFormat, TargetFormat } from '../types.js';
  * @deckops/sdk — see docs/formats.md for the line-by-line citations.
  * Absence from this table is the single source of truth for
  * `unsupported_format`.
+ *
+ * The cloud is the only renderer. A format the backend cannot convert is not
+ * supported, and stays that way until the backend gains a task for it — the
+ * fix belongs upstream, never in a local fallback here.
  */
 export interface BaseRoute {
   kind: RouteKind;
-  /** Ordered backend tasks. Empty for passthrough and local routes. */
+  /** Ordered backend tasks. Empty only for the passthrough route. */
   tasks: DeckTaskType[];
   /** Known fidelity trade-off, surfaced to the user on stderr and in --json. */
   caveat?: string;
@@ -25,28 +29,33 @@ const HTML_TO_VIDEO_CAVEAT =
   'HTML is rebuilt as PPTX before the video is produced, so the result is a slideshow of the ' +
   'reconstructed page rather than a capture of the live document.';
 
-const IWORK_PREVIEW_CAVEAT =
-  'Rendered from the preview embedded in the document: the first page only, at whatever ' +
-  'resolution iWork saved it.';
-
 /**
- * Combinations that are planned but not built.
+ * Combinations the DeckFlow cloud cannot do yet, but is expected to.
  *
  * Kept in the table rather than left to fall through to `unsupported_format`
- * so the message can say "not yet" instead of "never", and name what is
- * blocking it. See docs/roadmap.md.
+ * so the message can say "not yet" instead of "never", and name the missing
+ * backend capability. Every entry here is an upstream ask, not local work:
+ * DeckRender never renders a format itself to fill a gap. See docs/roadmap.md.
  */
 export const NOT_IMPLEMENTED: Readonly<Partial<Record<SourceFormat, Partial<Record<TargetFormat, string>>>>> =
   {
     xlsx: {
-      image: 'Spreadsheet rendering needs a layout engine DeckRender does not have yet.',
-      pdf: 'Spreadsheet rendering needs a layout engine DeckRender does not have yet.',
+      image: 'The DeckFlow cloud has no spreadsheet converter yet.',
+      pdf: 'The DeckFlow cloud has no spreadsheet converter yet.',
     },
-    pdf: { video: 'PDF to video needs frame assembly that DeckRender does not bundle yet.' },
+    pdf: { video: 'The DeckFlow cloud has no pdf-to-video task yet.' },
     ppt: {
-      pdf: 'Legacy .ppt files need normalization to .pptx before the stable PDF converter can run.',
+      pdf: 'The DeckFlow cloud has no ppt-to-pdf task: the legacy binary format needs normalizing to .pptx first.',
     },
-    key: { video: 'Keynote to video needs frame assembly that DeckRender does not bundle yet.' },
+    key: { video: 'The DeckFlow cloud has no keynote-to-video task yet.' },
+    pages: {
+      image: 'The DeckFlow cloud has no Pages converter yet.',
+      pdf: 'The DeckFlow cloud has no Pages converter yet.',
+    },
+    numbers: {
+      image: 'The DeckFlow cloud has no Numbers converter yet.',
+      pdf: 'The DeckFlow cloud has no Numbers converter yet.',
+    },
   };
 
 export function plannedReason(source: SourceFormat, target: TargetFormat): string | undefined {
@@ -93,16 +102,10 @@ export const ROUTES: Readonly<Record<SourceFormat, Partial<Record<TargetFormat, 
     image: { kind: 'direct', tasks: ['convertor.markdown2png'] },
   },
   // iWork word processing and spreadsheet documents have no DeckOps converter.
-  // The embedded preview is the only thing available without shipping a
-  // renderer for the format, so these run entirely on this machine.
-  pages: {
-    image: { kind: 'local', tasks: [], caveat: IWORK_PREVIEW_CAVEAT },
-    pdf: { kind: 'local', tasks: [], caveat: IWORK_PREVIEW_CAVEAT },
-  },
-  numbers: {
-    image: { kind: 'local', tasks: [], caveat: IWORK_PREVIEW_CAVEAT },
-    pdf: { kind: 'local', tasks: [], caveat: IWORK_PREVIEW_CAVEAT },
-  },
+  // Nothing is offered until one exists: extracting the embedded first-page
+  // preview here would answer with a thumbnail dressed up as a render.
+  pages: {},
+  numbers: {},
   xlsx: {},
 };
 

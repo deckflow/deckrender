@@ -1,8 +1,10 @@
 # DeckRender
 
-> Render any document format into visual artifacts.
+> Render PPTX, PDF, DOCX, Keynote, HTML and Markdown into images, PDF or video.
 
 DeckRender is a pure render engine. Give it a document, get back pixels — images, a PDF, or a video. Nothing else.
+
+It renders what the DeckFlow cloud can convert, which is a real list rather than "anything": run `deckrender formats`, or read [the matrix](#supported-formats) below.
 
 ```bash
 deckrender deck.pptx -o deck.png
@@ -83,19 +85,21 @@ deckrender formats
 | `.docx`        | ✅      | ✅    | —       |
 | `.doc`         | —       | —     | —       |
 | `.xlsx`        | 🕓      | 🕓    | —       |
-| `.pages`       | ✅      | ✅    | —       |
-| `.numbers`     | ✅      | ✅    | —       |
+| `.pages`       | 🕓      | 🕓    | —       |
+| `.numbers`     | 🕓      | 🕓    | —       |
 | `.html` + URLs | ✅      | ✅    | ✅      |
 | `.md`          | ✅      | —     | —       |
 
 Image output supports `png`, `jpg` and `webp` via `--image-format`.
 
-**🕓** is planned but not built; those report `not_implemented` with a message naming what is blocking them — the full list is under [Coming soon](docs/roadmap.md#coming-soon). Unsupported pairs fail with a clear message rather than producing something approximate.
+**🕓** means the DeckFlow cloud has no converter for it yet; those report `not_implemented` with a message naming the missing backend task — the full list is under [Coming soon](docs/roadmap.md#coming-soon). Unsupported pairs fail with a clear message rather than producing something approximate.
 
-Pages and Numbers render their embedded first-page preview — see [`docs/formats.md`](docs/formats.md) for that and the other per-format notes.
+Every supported cell is a cloud conversion. DeckRender renders nothing itself, so the matrix is exactly what the backend can do, and a format it cannot convert stays unsupported until it can.
+
+Pages and Numbers are recognized but not renderable yet — DeckRender will not answer with the thumbnail iWork embeds. Export to PDF or PPTX and render that. Keynote `.key` is unaffected.
 
 Legacy Word `.doc` files are not supported. Save them as `.docx` or export them to PDF first.
-Legacy PowerPoint `.ppt` files support image and video output; PDF conversion is still planned.
+Legacy PowerPoint `.ppt` files support image and video output; PDF conversion waits on the backend.
 
 Full detail, including which flags each route accepts: [`docs/formats.md`](docs/formats.md).
 
@@ -108,6 +112,8 @@ deckrender auth login
 ```
 
 Credentials are stored in `~/.deckflow/credentials` and **shared across every DeckFlow CLI**. Log in once through DeckRender and DeckHTML picks it up too, and vice versa. If your machine already has `DECKHTML_API_KEY` set, or you have logged in with the `deckops` CLI, DeckRender uses that automatically.
+
+A credential the backend rejects is treated as no credential: DeckRender drops it and retries the render in guest mode, warning on stderr rather than failing. Rendering is supposed to work with no setup at all, and stale state on a machine should not take that away. See [`docs/errors.md`](docs/errors.md#a-rejected-credential-falls-back-to-guest-mode).
 
 ```bash
 deckrender config list    # shows every value and exactly where it came from
@@ -162,7 +168,7 @@ const renderer = createRenderer({
 Input (file | URL | stdin)
    → InputResolver     normalize and classify
    → RenderPlan        route table: source × target → ordered backend tasks
-   → RenderEngine      pluggable; v0.1 ships the cloud engine
+   → CloudEngine       DeckOps tasks; the only renderer DeckRender ships
    → ArtifactWriter    page selection, naming, files / directory / zip
    → Result            human text or --json
 ```
@@ -171,15 +177,16 @@ Rendering is performed by [`@deckops/sdk`](https://www.npmjs.com/package/@deckop
 
 ### Where rendering happens
 
-**Most rendering runs in the DeckFlow cloud**: the document is uploaded over HTTPS, converted there, and the artifacts are downloaded back. Two routes never send anything anywhere:
+**Rendering happens in the DeckFlow cloud.** The document is uploaded over HTTPS, converted there, and the artifacts are downloaded back. There is no local render path, and no local fallback for a format the backend cannot convert.
 
-| Route                            | Where          | What leaves your machine                         |
-| -------------------------------- | -------------- | ------------------------------------------------ |
-| `.pages` `.numbers` → image, pdf | your machine   | nothing — the embedded preview is extracted here |
-| `.pdf` → pdf                     | your machine   | nothing — the file is copied as-is               |
-| everything else in the matrix    | DeckFlow cloud | the document, and any intermediate artifact      |
+| Route                    | Where          | What leaves your machine                    |
+| ------------------------ | -------------- | ------------------------------------------- |
+| everything in the matrix | DeckFlow cloud | the document, and any intermediate artifact |
+| `.pdf` → pdf             | your machine   | nothing — the file is copied as-is          |
 
-`--json` reports the `engine` that ran — `cloud`, `local` or `passthrough` — so you can check rather than assume. What DeckFlow does with an uploaded document is the cloud service's policy, not this client's. If your documents cannot leave your machine, settle that before adopting DeckRender; a local engine is on the [roadmap](docs/roadmap.md) but not here yet.
+`.pdf → pdf` is the one exception, and it is a file copy rather than a render: the input is already in the target format.
+
+`--json` reports the `engine` that ran — `cloud` or `passthrough` — so you can check rather than assume. What DeckFlow does with an uploaded document is the cloud service's policy, not this client's. **If your documents cannot leave your machine, DeckRender is not the tool for it** — settle that before adopting it.
 
 Full detail, including chained routes and URL input: [`docs/formats.md`](docs/formats.md#where-rendering-happens).
 
@@ -196,10 +203,16 @@ DECKRENDER_E2E=1 pnpm test:cloud    # guest render against the live backend
 pnpm test:conformance              # every format pair; needs credentials
 ```
 
-The route table in `src/core/routes.ts` decides what converts to what. Probe the
-backend before adding to it — several plausible-looking conversions do not
-actually work, so a route inferred from type definitions alone can be wrong.
-`pnpm test:conformance` confirms the matrix end to end.
+The route table in `src/core/routes.ts` decides what converts to what, and every
+entry in it is a backend task. Probe the backend before adding to it — several
+plausible-looking conversions do not actually work, so a route inferred from type
+definitions alone can be wrong. `pnpm test:conformance` confirms the matrix end
+to end.
+
+A format the backend cannot convert stays unsupported. Do not add a local
+renderer, extractor or fallback to cover the gap: the fix belongs upstream, and a
+gap that is visible is a gap that gets fixed. See
+[the roadmap](docs/roadmap.md#rendering-is-the-clouds-job).
 
 The `--json` envelope, error codes, exit codes and the shared credential file
 format are what other people's scripts depend on. Changing any of them is a

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildPlan, type SoftOption } from '../../src/core/plan.js';
 import { snapToTier } from '../../src/core/routes.js';
+import { SOURCE_FORMATS, TARGET_FORMATS, type RenderPlan } from '../../src/types.js';
 import type { DeckRenderError } from '../../src/errors/index.js';
 
 function codeOf(fn: () => unknown): string {
@@ -60,21 +61,36 @@ describe('route selection', () => {
     expect(plan.caveat).toMatch(/rebuilt as PPTX/);
   });
 
-  it('runs iWork word processing and spreadsheet formats locally', () => {
+  it('refuses iWork word processing and spreadsheet formats outright', () => {
+    // The cloud has no converter for these, and DeckRender renders nothing
+    // itself — a first-page preview extracted here would not be a render.
     for (const source of ['pages', 'numbers'] as const) {
       for (const target of ['image', 'pdf'] as const) {
-        const { plan } = buildPlan({ source, target });
-        expect(plan.kind).toBe('local');
-        expect(plan.steps.map((s) => s.task)).toEqual(['local:iwork-preview']);
-        expect(plan.caveat).toMatch(/first page only/);
+        expect(codeOf(() => buildPlan({ source, target }))).toBe('not_implemented');
       }
     }
   });
 
-  it('does not append a webp step to a local route', () => {
-    // The local engine has no image converter, so webp cannot be honoured here.
-    const { plan } = buildPlan({ source: 'pages', target: 'image', imageFormat: 'webp' });
-    expect(plan.steps.map((s) => s.task)).toEqual(['local:iwork-preview']);
+  it('never plans a step that runs outside the cloud', () => {
+    // Passthrough is a file copy, not a render; nothing else may skip the
+    // backend. This is the guard against a local fallback creeping back in.
+    for (const source of SOURCE_FORMATS) {
+      for (const target of TARGET_FORMATS) {
+        let plan: RenderPlan;
+        try {
+          ({ plan } = buildPlan({ source, target }));
+        } catch {
+          continue;
+        }
+        for (const step of plan.steps) {
+          expect(
+            step.task === 'passthrough' ||
+              step.task.startsWith('convertor.') ||
+              step.task.startsWith('image.')
+          ).toBe(true);
+        }
+      }
+    }
   });
 });
 
@@ -95,7 +111,15 @@ describe('coming soon', () => {
     } catch (error) {
       const err = error as DeckRenderError;
       expect(err.message).toMatch(/coming soon/);
-      expect(err.hint).toMatch(/layout engine/);
+      expect(err.hint).toMatch(/no spreadsheet converter/);
+    }
+  });
+
+  it('names the missing backend capability rather than blaming this client', () => {
+    try {
+      buildPlan({ source: 'pages', target: 'image' });
+    } catch (error) {
+      expect((error as DeckRenderError).hint).toMatch(/DeckFlow cloud has no Pages converter/);
     }
   });
 
