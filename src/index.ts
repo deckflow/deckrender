@@ -1,7 +1,7 @@
 /**
  * @deckflow/deckrender
  *
- * Render any document format into visual artifacts.
+ * Render PPTX, PDF, DOCX, Keynote, HTML and Markdown into images, PDF or video.
  *
  *   import { render } from '@deckflow/deckrender';
  *   await render({ input: 'deck.pptx', format: 'image', pages: '1-10', out: 'frames/' });
@@ -32,14 +32,11 @@ export {
 } from './core/routes.js';
 
 export { CloudEngine, type CloudEngineOptions } from './engines/cloud.js';
-export { LocalEngine, extractIworkPreview } from './engines/local.js';
 export { normalizeTaskResult, extensionOf } from './engines/artifacts.js';
 export type { EngineOutput, ExecuteContext, RenderEngine } from './engines/engine.js';
 
 export { resolveInput, inputBaseName, withBaseHref, type ResolveInputOptions } from './input/resolve.js';
 export { writeArtifacts, type WriteOptions, type WriteResult } from './output/writer.js';
-export { jpegToPdf, readJpegSize } from './output/jpeg-pdf.js';
-export { listZipEntries, readZipEntry, type ZipEntryInfo } from './input/unzip.js';
 export { DEFAULT_EXTENSION, frameName, inferFromOutputPath, templatedName } from './output/naming.js';
 
 export {
@@ -61,6 +58,7 @@ export {
   DeckRenderError,
   ERROR_CODES,
   ExitCode,
+  credentialsRejected,
   isDeckRenderError,
   mapSdkError,
   type ErrorCode,

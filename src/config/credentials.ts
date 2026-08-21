@@ -178,10 +178,9 @@ function sourceLabel(source: CredentialSource): string {
  *
  * The resolution chain picks up credentials nobody configured for DeckRender —
  * another DeckFlow tool's `~/.deckops/config.json`, an exported
- * `DECKHTML_API_KEY`. When one of those is expired the render fails with the
- * backend's bare "Authentication failed" instead of falling back to guest mode,
- * and nothing points at the file to clean up. Returns undefined in guest mode,
- * where there is no credential to name.
+ * `DECKHTML_API_KEY`. When one of those is expired the backend answers with a
+ * bare "Authentication failed" and nothing points at the file to clean up.
+ * Returns undefined in guest mode, where there is no credential to name.
  */
 export function describeCredentialOrigin(resolved: ResolvedCredentials): string | undefined {
   const parts: string[] = [];

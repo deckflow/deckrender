@@ -18,7 +18,7 @@ Errors go to stderr. Scripts should branch on the exit code first and parse the 
 | `usage_error`        | Invalid flags, missing input, conflicting flags              | 2    |
 | `unsupported_format` | No route exists for this input/output pair                   | 2    |
 | `unsupported_option` | The route exists, but this flag cannot reach the backend     | 2    |
-| `not_implemented`    | Planned, but not built yet                                   | 2    |
+| `not_implemented`    | The DeckFlow cloud cannot convert this pair yet              | 2    |
 | `auth_error`         | Credentials required, missing, or rejected                   | 3    |
 | `render_error`       | The render itself failed                                     | 1    |
 | `conversion_error`   | Rendered, but the artifact could not be retrieved or written | 1    |
@@ -73,16 +73,20 @@ The exception is options inherited from a profile or config file, which are drop
 
 ### `not_implemented`
 
-Planned, but not built. The message says "coming soon" and names what is blocking it:
+The DeckFlow cloud cannot do this conversion yet. The message says "coming soon" and names the missing backend capability:
 
 ```
 Error: Rendering .xlsx to pdf is coming soon — not supported yet.
-  Spreadsheet rendering needs a layout engine DeckRender does not have yet.
+  The DeckFlow cloud has no spreadsheet converter yet.
   Track it in docs/roadmap.md.
 ```
 
 The distinction from `unsupported_format` matters: one is worth waiting for, the
 other means find another approach. `deckrender formats` marks these `soon`.
+
+Rendering happens in the cloud, so this code always points upstream. DeckRender
+will not fill the gap locally with an approximation — see
+[the roadmap](roadmap.md#rendering-is-the-clouds-job).
 
 ## Common cases
 
@@ -96,7 +100,7 @@ other means find another approach. `deckrender formats` marks these `soon`.
 | `--fps is not supported yet`                            | The video task accepts no parameters — see the [roadmap](roadmap.md)        |
 | `unknown option '--x'`                                  | Typo, or a flag that no longer exists — `--mode` was removed in v0.1        |
 | `... is coming soon`                                    | Planned combination; see `deckrender formats` and the [roadmap](roadmap.md) |
-| `This iWork document has no embedded preview`           | Re-save from Pages/Numbers with previews enabled, or export to PDF          |
+| `Input is a directory`                                  | An iWork package — re-save it as a single file, or export to PDF           |
 | `Invalid value for quality: ultra`                      | `config set` rejected the value; the message lists what is allowed          |
 | `Authentication failed`                                 | `deckrender auth login`, or set `DECKFLOW_API_KEY`                          |
 
@@ -113,26 +117,50 @@ deckrender config list    # shows which credential is winning, and from where
 
 `config list` is usually the fastest way to answer "why is it not using the key I just set?".
 
-### A credential you did not know you had
+### A rejected credential falls back to guest mode
 
-Credentials resolve from a [five-level chain](configuration.md), which includes files
-written by the other DeckFlow CLIs. A machine that once used `deckops` or exported
-`DECKHTML_API_KEY` is **not** in guest mode, even though nothing was configured for
-DeckRender — and when that inherited credential has expired, the render fails with
-`auth_error` where guest mode would have succeeded.
+Credentials resolve from a [five-level chain](configuration.md), which includes
+files written by the other DeckFlow CLIs. A machine that once used `deckops` or
+exported `DECKHTML_API_KEY` is **not** in guest mode, even though nothing was
+configured for DeckRender.
 
-The 401 hint names what was sent, so the fix does not require guessing:
+When the backend rejects whatever was sent, DeckRender treats it as no credential
+at all: it drops the credential, retries the render as a guest, and warns on
+stderr.
+
+```
+Warning: The backend rejected the token from ~/.deckops/config.json, so it is
+being ignored and the render retried in guest mode, which is rate-limited. Run
+`deckrender auth login` for full access, or `deckrender config list` to see where
+that credential came from.
+```
+
+An invalid credential is not a credential, and rendering is supposed to work with
+no setup at all — so leftover state on a machine must not turn a render guest mode
+would have completed into a hard failure. Agents and scripts are what hit this: an
+expired token nobody remembers configuring fails on a developer machine where the
+same code succeeds in a clean container. The warning names what was dropped, so
+the fallback is never silent.
+
+Two things travel with the rejected credential:
+
+- The `spaceId`, which belongs to that credential's workspace. Sending it as a
+  guest earns a `403`, so it is left behind too. A `403` that names your own data
+  is treated exactly like a `401` for the same reason — the workspace outlived
+  the login it belonged to.
+- The quota. Guest rendering is rate-limited; `deckrender auth login` restores
+  full access.
+
+Only a rejected credential triggers this. A `402 Payment Required` — a workspace
+out of balance — is a real answer about your account and is reported as such, not
+retried. If guest mode is refused as well, that failure is what you see:
 
 ```
 Error: Authentication failed: invalid token
-  Credentials in use: token from ~/.deckops/config.json. Run `deckrender auth login` to replace them, or remove them to render in guest mode.
+  Run `deckrender auth login`, or set DECKFLOW_API_KEY in the environment.
 ```
 
-At a terminal this rarely bites: a 401 opens the browser login and retries. It is
-scripts and agents — no TTY, or `--json` — that see the failure, so an agent running
-on a developer machine can hit it where the same code in a clean container does not.
-DeckRender does not silently fall back to guest mode: dropping to a different quota
-and workspace without being asked would hide a real authorization problem.
+At a terminal, that second failure opens the browser login and retries once more.
 
 ## Retries
 

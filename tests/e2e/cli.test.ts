@@ -191,7 +191,8 @@ describe('output streams', () => {
       pdf: { supported: false, planned: false },
     });
     expect(payload.matrix.pdf.pdf).toMatchObject({ kind: 'passthrough' });
-    expect(payload.matrix.pages.image).toMatchObject({ supported: true, kind: 'local' });
+    expect(payload.matrix.pages.image).toMatchObject({ supported: false, planned: true });
+    expect(payload.matrix.numbers.pdf).toMatchObject({ supported: false, planned: true });
     expect(payload.matrix.html.video).toMatchObject({
       supported: true,
       kind: 'derived',

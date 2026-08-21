@@ -15,9 +15,11 @@ export interface EngineOutput {
 /**
  * A render backend.
  *
- * The plan, parameter mapping, artifact naming and output envelope are all
- * engine-agnostic, so adding the local engine in v0.2 means implementing this
- * interface and nothing else.
+ * DeckRender ships exactly one: the cloud engine. The interface stays because
+ * the plan, parameter mapping, artifact naming and output envelope are all
+ * engine-agnostic, so a caller can substitute its own backend. It is not an
+ * invitation to add a local renderer here — an unsupported format is reported
+ * as unsupported until the backend can convert it.
  */
 export interface RenderEngine {
   readonly name: string;

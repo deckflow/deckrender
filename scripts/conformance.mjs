@@ -34,8 +34,8 @@ const EXPECTED = {
   doc: { image: 'no', pdf: 'no', video: 'no' },
   xlsx: { image: 'soon', pdf: 'soon', video: 'no' },
   key: { image: 'yes', pdf: 'yes', video: 'soon' },
-  pages: { image: 'yes', pdf: 'yes', video: 'no' },
-  numbers: { image: 'yes', pdf: 'yes', video: 'no' },
+  pages: { image: 'soon', pdf: 'soon', video: 'no' },
+  numbers: { image: 'soon', pdf: 'soon', video: 'no' },
   html: { image: 'yes', pdf: 'yes', video: 'yes' },
 };
 

@@ -9,34 +9,47 @@
 - Profiles, `--json` envelope, page selection, zip and stdout output
 - Credentials shared with DeckHTML and DeckOps; guest mode without login
 
-## v0.2 — local engine
+## Rendering is the cloud's job
 
-`LocalEngine`: Playwright for HTML, pdfium for PDF. The `RenderEngine` interface is already the only thing the pipeline talks to, so this is an additive change.
+DeckRender is a client. Every conversion runs in the DeckFlow cloud, and that is
+a deliberate boundary rather than a stage on the way to something else:
 
-How engine selection is exposed is deliberately undecided. v0.1 removed the `--mode` flag rather than shipping a switch with one working position; the flag returns only once there is a second engine to switch to.
+- **No local render path.** There is no local engine, and one is not planned.
+  The earlier milestone for a `LocalEngine` — Playwright for HTML, pdfium for
+  PDF — is dropped, which is why the version numbers below shift up by one.
+- **A format the cloud cannot convert is not supported.** It reports
+  `not_implemented` and names the missing backend task. The fix is a converter
+  upstream, tracked under [Upstream asks](#upstream-asks-for-deckops).
+- **No local logic to widen the matrix.** No format is answered with something
+  approximate — an embedded thumbnail, a partial extraction — because that is
+  easier than waiting for the backend. Supported means the real conversion.
 
-This also replaces the chained `html → pdf` route with a native `page.pdf()`, removing today's fidelity caveat.
+`RendererOptions.engine` still lets a *caller* substitute their own backend. That
+is their choice to make; it is not DeckRender shipping one.
 
-Also planned: switch URL input to the backend's `html.getByURL` once it reaches a published SDK release, for true runtime-DOM capture instead of a local fetch.
+Also planned: switch URL input to the backend's `html.getByURL` once it reaches a
+published SDK release, for true runtime-DOM capture instead of a local fetch.
 
 ## Coming soon
 
-Combinations the CLI marks `soon` and reports as `not_implemented`:
+Combinations the CLI marks `soon` and reports as `not_implemented`. Every one is a missing backend task, and every one is fixed upstream:
 
-| Combination          | Blocked on                                                                                                         |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `.ppt` → pdf         | Normalize the legacy binary file to `.pptx` before invoking the stable PDF converter.                              |
-| `.xlsx` → image, pdf | A spreadsheet layout engine. A workbook needs a real layout pass — not something to fake from an embedded preview. |
-| `.pdf` → video       | Local frame assembly (ffmpeg), not bundled.                                                                        |
-| `.key` → video       | Local frame assembly (ffmpeg), not bundled.                                                                        |
+| Combination             | Blocked on                                                                        |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| `.ppt` → pdf            | A task that normalizes the legacy binary file to `.pptx` before the PDF converter |
+| `.xlsx` → image, pdf    | A spreadsheet converter — a workbook needs a real layout pass                     |
+| `.pages` → image, pdf   | A Pages converter                                                                 |
+| `.numbers` → image, pdf | A Numbers converter                                                               |
+| `.pdf` → video          | A `convertor.pdf2video` task                                                      |
+| `.key` → video          | A `convertor.keynote2video` task                                                  |
 
-`.pages` and `.numbers` are supported today by rendering the first-page preview every iWork document embeds. That is a floor, not the goal: a full renderer for them stays on this list in spirit, and `docs/formats.md` states the first-page limitation plainly so nobody is surprised.
+`.pages` and `.numbers` were briefly answered with the first-page preview every iWork document embeds. That was removed: a thumbnail reported as a successful render is worse than a clear "not yet". They come back when the backend can convert them.
 
-## v0.3 — video parameters
+## v0.2 — video parameters
 
 `--fps`, `--duration` and `--transition`. **Blocked upstream**: `convertor.ppt2video` currently accepts no parameters at all (`ConvertPptToVideoParams = Record<never, never>`), so the flags fail today rather than silently rendering backend defaults.
 
-## v0.4 — throughput
+## v0.3 — throughput
 
 - Batch rendering across many inputs
 - `--watch`
@@ -56,14 +69,18 @@ Several limits here are not DeckRender's to fix:
 | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
 | Fix `@deckops/sdk` `package.json`: `types` points at `./src/index.ts`, which `files` does not publish | Removes the tsconfig `paths` workaround every TypeScript consumer currently needs |
 | Publish `html.getByURL` in a released SDK                                                             | Runtime-DOM capture for URL input                                                 |
-| Parameters for `convertor.ppt2video` (`fps`, `durationPerSlide`, `transition`)                        | v0.3                                                                              |
+| Parameters for `convertor.ppt2video` (`fps`, `durationPerSlide`, `transition`)                        | v0.2                                                                              |
 | Resolution and format parameters for `convertor.keynote2image`                                        | `--width` and `--image-format jpg` on Keynote input                               |
 | Page ranges on conversion tasks                                                                       | Makes `--pages` save compute and cost, not just bandwidth                         |
 | Task chaining by upstream task id                                                                     | Removes the download/upload round-trip in every derived route                     |
-| A `convertor.html2pdf` task                                                                           | Removes the HTML→PDF fidelity caveat without waiting for the local engine         |
+| A `convertor.html2pdf` task                                                                           | Removes the HTML→PDF fidelity caveat                                             |
+| Pages and Numbers converters                                                                          | `.pages` and `.numbers` input                                                    |
+| `convertor.pdf2video` and `convertor.keynote2video` tasks                                             | `.pdf` and `.key` to video                                                       |
 
 ## Out of scope
 
 DeckRender renders. It does not parse content, extract text, understand structure, or edit files. Those belong to DeckProbe, DeckUse and DeckOps.
+
+It also does not render locally. Bundling a browser, a PDF rasterizer or a format-specific extractor would make this a second renderer competing with the backend, and every format it could reach that way would be one the cloud never got asked to support.
 
 Those boundaries are what keep the CLI small: one command, a document in, pixels out.

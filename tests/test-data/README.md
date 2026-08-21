@@ -21,12 +21,14 @@ finds for each and ignores the rest.
 | `test.doc`     | asserts that legacy Word remains unsupported             |
 | `test.key`     | `keynote2image`, `keynote2pdf`                           |
 | `test.html`    | `html2png`, and the `html2pptx → ppt2*` chains           |
-| `test.pages`   | the local iWork preview extractor                        |
-| `test.numbers` | the same, from a spreadsheet                             |
+| `test.pages`   | asserts that Pages still reports `not_implemented`       |
+| `test.numbers` | asserts that Numbers still reports `not_implemented`     |
 | `test.xlsx`    | asserts that spreadsheets still report `not_implemented` |
 
-A `.pages` **directory bundle** is as valid as a single `.pages` file — the two
-shapes take different code paths, so testing both is worthwhile.
+Use single files, not iWork **directory bundles**. Rendering runs in the cloud,
+which takes a file to upload, so a directory input is rejected with a
+`usage_error` — the conformance harness reads that as a failure rather than the
+`not_implemented` it is checking for.
 
 Multi-page documents are more useful than single-page ones: page counts,
 `--pages` filtering and frame naming only get exercised when there is more than

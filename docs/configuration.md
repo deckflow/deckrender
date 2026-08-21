@@ -50,7 +50,7 @@ Environment variables, in order:
 
 Independent resolution means an API key from the environment can combine with a `spaceId` left behind by a `deckops` login.
 
-Levels 2–4 are inherited rather than chosen, so a machine set up for another DeckFlow tool is not in guest mode even when nothing was configured for DeckRender. If that inherited credential has expired, the render fails with `auth_error` instead of falling back to guest mode — see [A credential you did not know you had](errors.md#a-credential-you-did-not-know-you-had). `deckrender config list` shows what is in effect before you hit it.
+Levels 2–4 are inherited rather than chosen, so a machine set up for another DeckFlow tool is not in guest mode even when nothing was configured for DeckRender. Whatever the source, a credential the backend rejects is treated as absent: DeckRender drops it — along with the `spaceId` that belongs to it — and retries in guest mode with a warning. See [A rejected credential falls back to guest mode](errors.md#a-rejected-credential-falls-back-to-guest-mode); `deckrender config list` shows what is in effect before you hit it.
 
 ## Seeing what is in effect
 
@@ -181,4 +181,4 @@ The callback server accepts `spaceId` or `space_id`, listens on port 3737 by def
 
 Credentials are optional. Without them the backend creates tasks in a pending state that need an explicit `PUT /tools/tasks/:id/start`. Clients must issue that call when unauthenticated; authenticated tasks start on their own.
 
-Nothing should demand credentials up front — a `401` mid-request is the right trigger for an interactive login, which then retries the original request.
+Nothing should demand credentials up front. A `401` means the credential is not usable, so the client drops it and retries as a guest; an interactive login is the right response only when the guest request is refused too.

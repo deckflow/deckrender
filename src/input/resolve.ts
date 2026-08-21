@@ -22,11 +22,24 @@ const EXTENSION_MAP: Record<string, SourceFormat> = {
 };
 
 /**
- * iWork saves either a single ZIP file or a directory bundle with the same
- * members loose inside it. Both are valid documents, so a directory with one
- * of these extensions is an input rather than a mistake.
+ * What to say when the input turns out to be a directory.
+ *
+ * iWork can save a document as a bundle that Finder shows as a single file, so
+ * this is a real mistake to make rather than a typo. Only Keynote is worth
+ * re-saving: Pages and Numbers have no cloud converter either way, and sending
+ * the user through a re-save that still fails would waste their time.
  */
-const BUNDLE_FORMATS: SourceFormat[] = ['pages', 'numbers', 'key'];
+const BUNDLE_HINTS: Record<string, string> = {
+  '.key':
+    'This is an iWork package. Re-save it as a single file from Keynote ' +
+    '(Settings → General → Save new documents as), or export it to PDF and render that.',
+  '.pages':
+    'This is an iWork package, and .pages documents are not renderable yet in any case. ' +
+    'Export it to PDF or DOCX and render that.',
+  '.numbers':
+    'This is an iWork package, and .numbers documents are not renderable yet in any case. ' +
+    'Export it to PDF and render that.',
+};
 
 /** Formats kept as text so they need no temporary local file before upload. */
 const INLINE_FORMATS: SourceFormat[] = ['html', 'md'];
@@ -119,14 +132,15 @@ async function resolveFile(spec: string, options: ResolveInputOptions): Promise<
 
   const format = options.from ?? formatFromExtension(absolute);
 
+  // iWork can save a document as a directory bundle that Finder shows as one
+  // file. There is nothing to upload in that shape, and repackaging it here
+  // would be local logic standing in for a backend that never sees it.
   if (stat.isDirectory()) {
-    if (!BUNDLE_FORMATS.includes(format)) {
-      throw DeckRenderError.usage(`Input is a directory: ${spec}`, {
-        hint: 'DeckRender renders a single document. Point it at a file.',
-      });
-    }
-    // The engine reads bundle members straight off disk, so the path is enough.
-    return { kind: 'file', format, path: absolute, display: spec };
+    throw DeckRenderError.usage(`Input is a directory: ${spec}`, {
+      hint:
+        BUNDLE_HINTS[path.extname(absolute).toLowerCase()] ??
+        'DeckRender renders a single document. Point it at a file.',
+    });
   }
 
   if (INLINE_FORMATS.includes(format)) {
