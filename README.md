@@ -2,7 +2,7 @@
 
 > Render PPTX, PDF, DOCX, Keynote, HTML and Markdown into images, PDF or video.
 
-DeckRender is a pure render engine. Give it a document, get back pixels — images, a PDF, or a video. Nothing else.
+DeckRender turns supported document and web inputs into images, PDFs, or videos through one predictable CLI and TypeScript contract. Use it to move visual document work out of one-off desktop steps and into repeatable software workflows.
 
 It ships two interchangeable engines: a Community engine that renders supported formats on your machine, and the existing DeckFlow cloud engine with a wider matrix. Run `deckrender formats --engine local|cloud`, or read [the matrices](#supported-formats) below.
 
@@ -13,6 +13,17 @@ deckrender deck.pptx -o deck.mp4
 ```
 
 It is to documents what `ffmpeg` is to media: one command, a small set of flags, predictable output. It deliberately does **not** parse content, extract text, or edit files — those belong to other tools in the [DeckFlow](https://github.com/deckflow) family.
+
+## Where it creates value
+
+- **Product previews and delivery** — turn document pages and slides into visual
+  artifacts that web and mobile products can display.
+- **AI vision pipelines** — create page or slide images for multimodal models
+  and document-understanding workflows.
+- **Automated publishing** — generate images, PDFs, or videos from scripts and
+  CI when the selected input/output route supports them.
+- **Review handoffs** — produce concrete visual artifacts that people or agents
+  can inspect before downstream delivery.
 
 ## Install
 
