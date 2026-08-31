@@ -4,7 +4,7 @@
 
 DeckRender is a pure render engine. Give it a document, get back pixels — images, a PDF, or a video. Nothing else.
 
-It renders what the DeckFlow cloud can convert, which is a real list rather than "anything": run `deckrender formats`, or read [the matrix](#supported-formats) below.
+It ships two interchangeable engines: a Community engine that renders supported formats on your machine, and the existing DeckFlow cloud engine with a wider matrix. Run `deckrender formats --engine local|cloud`, or read [the matrices](#supported-formats) below.
 
 ```bash
 deckrender deck.pptx -o deck.png
@@ -25,6 +25,10 @@ npm install -g @deckflow/deckrender
 ```
 
 Requires Node.js 18 or newer.
+
+For Community/local rendering, install Chrome or Chromium. The matching `office2html` binary is bundled through this repository's platform package and installed automatically. See [Local engine setup](docs/engines.md#local-engine-setup).
+
+Only the current OS/CPU binary is downloaded, not all four platforms. Cloud-only users can skip optional local dependencies with `npm install -g --omit=optional @deckflow/deckrender`.
 
 ## Quick start
 
@@ -70,11 +74,18 @@ $ deckrender deck.pptx --json
 }
 ```
 
-## Supported formats
+Keep PPTX/PDF/HTML rendering on the machine:
 
 ```bash
-deckrender formats
+deckrender config set engine local
+deckrender deck.pptx -o frames/
 ```
+
+Or choose per invocation with `--engine local|cloud|auto`. `auto` is local-first and prints a warning before falling back to cloud; an explicit `local` choice never uploads or silently falls back.
+
+## Supported formats
+
+The table below is the default cloud matrix. Use `deckrender formats --engine local` for the Community matrix.
 
 | Input          | → image | → pdf | → video |
 | -------------- | ------- | ----- | ------- |
@@ -94,7 +105,7 @@ Image output supports `png`, `jpg` and `webp` via `--image-format`.
 
 **🕓** means the DeckFlow cloud has no converter for it yet; those report `not_implemented` with a message naming the missing backend task — the full list is under [Coming soon](docs/roadmap.md#coming-soon). Unsupported pairs fail with a clear message rather than producing something approximate.
 
-Every supported cell is a cloud conversion. DeckRender renders nothing itself, so the matrix is exactly what the backend can do, and a format it cannot convert stays unsupported until it can.
+The local matrix currently supports `.pptx → image/pdf`, `.pdf → image/pdf`, and `.html`/URL → image. Local WebP and video are not supported. The two matrices remain independent: choosing `local` never borrows a missing cloud route.
 
 Pages and Numbers are recognized but not renderable yet — DeckRender will not answer with the thumbnail iWork embeds. Export to PDF or PPTX and render that. Keynote `.key` is unaffected.
 
@@ -103,7 +114,7 @@ Legacy PowerPoint `.ppt` files support image and video output; PDF conversion wa
 
 Full detail, including which flags each route accepts: [`docs/formats.md`](docs/formats.md).
 
-## Authentication is optional
+## Authentication is optional for cloud
 
 DeckRender works with no setup at all — rendering runs in guest mode. Log in when you want higher quotas or a private workspace:
 
@@ -121,6 +132,8 @@ deckrender config list    # shows every value and exactly where it came from
 
 See [`docs/configuration.md`](docs/configuration.md) for the full resolution order.
 
+The local engine does not resolve or send credentials.
+
 ## Use it as a library
 
 The CLI and the programmatic API ship in the same package.
@@ -130,12 +143,13 @@ import { render } from '@deckflow/deckrender';
 
 const result = await render({
   input: 'deck.pptx',
+  engine: 'local',
   format: 'image',
   pages: '1-10',
   out: 'frames/',
 });
 
-console.log(result.route); // ['convertor.ppt2image']
+console.log(result.route); // ['local.office2html', 'local.capture']
 console.log(result.outputs); // [{ page: 1, file: 'frames/001.png', ... }]
 ```
 
@@ -161,32 +175,31 @@ const renderer = createRenderer({
 | [Configuration](docs/configuration.md) | Credentials, shared auth, render defaults               |
 | [Errors](docs/errors.md)               | Error codes and exit codes                              |
 | [Roadmap](docs/roadmap.md)             | What is coming and what is blocked upstream             |
+| [Engines](docs/engines.md)             | Local/cloud selection, setup, privacy and fidelity       |
 
 ## How it works
 
 ```
 Input (file | URL | stdin)
    → InputResolver     normalize and classify
-   → RenderPlan        route table: source × target → ordered backend tasks
-   → CloudEngine       DeckOps tasks; the only renderer DeckRender ships
+   → RenderPlan        engine-specific source × target route table
+   → LocalEngine       office2html + Chromium + PDF.js
+     or CloudEngine    DeckOps tasks
    → ArtifactWriter    page selection, naming, files / directory / zip
    → Result            human text or --json
 ```
 
-Rendering is performed by [`@deckops/sdk`](https://www.npmjs.com/package/@deckops/sdk). DeckRender contributes the input model, the render routing, artifact naming, and a stable output contract.
+Cloud rendering is performed through [`@deckops/sdk`](https://www.npmjs.com/package/@deckops/sdk). Community rendering uses the bundled local orchestration layer and optional local dependencies. Both share input resolution, artifact naming, errors and the result contract.
 
 ### Where rendering happens
 
-**Rendering happens in the DeckFlow cloud.** The document is uploaded over HTTPS, converted there, and the artifacts are downloaded back. There is no local render path, and no local fallback for a format the backend cannot convert.
+| Engine        | Where rendering runs | What leaves your machine |
+| ------------- | -------------------- | ------------------------ |
+| `local`       | your machine         | no document bytes        |
+| `cloud`       | DeckFlow cloud       | source and intermediates |
+| `passthrough` | your machine         | nothing                  |
 
-| Route                    | Where          | What leaves your machine                    |
-| ------------------------ | -------------- | ------------------------------------------- |
-| everything in the matrix | DeckFlow cloud | the document, and any intermediate artifact |
-| `.pdf` → pdf             | your machine   | nothing — the file is copied as-is          |
-
-`.pdf → pdf` is the one exception, and it is a file copy rather than a render: the input is already in the target format.
-
-`--json` reports the `engine` that ran — `cloud` or `passthrough` — so you can check rather than assume. What DeckFlow does with an uploaded document is the cloud service's policy, not this client's. **If your documents cannot leave your machine, DeckRender is not the tool for it** — settle that before adopting it.
+Local PPTX capture blocks the CDN references emitted by `office2html` and uses local CSS/system-font fallbacks. URL input still fetches the URL the user requested, and generic HTML may load its own referenced assets; neither path calls the DeckFlow API. `--json` reports the actual `engine` and route so the boundary is auditable.
 
 Full detail, including chained routes and URL input: [`docs/formats.md`](docs/formats.md#where-rendering-happens).
 
@@ -200,19 +213,17 @@ pnpm check                    # typecheck + lint + unit + integration
 pnpm build && pnpm test:e2e   # e2e drives the built binary
 
 DECKRENDER_E2E=1 pnpm test:cloud    # guest render against the live backend
+DECKRENDER_LOCAL_E2E=1 pnpm test:local  # real Chrome/PDF.js local routes
 pnpm test:conformance              # every format pair; needs credentials
 ```
 
-The route table in `src/core/routes.ts` decides what converts to what, and every
-entry in it is a backend task. Probe the backend before adding to it — several
+The cloud table in `src/core/routes.ts` and local table in `src/engines/local/routes.ts`
+decide what converts to what. Probe the corresponding engine before adding a route — several
 plausible-looking conversions do not actually work, so a route inferred from type
 definitions alone can be wrong. `pnpm test:conformance` confirms the matrix end
 to end.
 
-A format the backend cannot convert stays unsupported. Do not add a local
-renderer, extractor or fallback to cover the gap: the fix belongs upstream, and a
-gap that is visible is a gap that gets fixed. See
-[the roadmap](docs/roadmap.md#rendering-is-the-clouds-job).
+A missing local route stays local-only unsupported and never falls back unless the user explicitly selected `auto`. A missing cloud route remains an upstream DeckOps ask; do not use one matrix to conceal a gap in the other.
 
 The `--json` envelope, error codes, exit codes and the shared credential file
 format are what other people's scripts depend on. Changing any of them is a

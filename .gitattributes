@@ -2,3 +2,5 @@
 
 # Keep shell scripts executable and LF regardless of platform
 *.sh text eol=lf
+
+packages/office2html-*/bin/* binary

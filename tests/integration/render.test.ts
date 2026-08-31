@@ -330,14 +330,92 @@ describe('passthrough', () => {
   });
 });
 
+describe('engine artifact lifecycle', () => {
+  it('rejects conflicting built-in and custom engine selection', async () => {
+    const engine: RenderEngine = {
+      name: 'custom',
+      supports: () => true,
+      execute: async () => ({ artifacts: [], totalPages: 1 }),
+    };
+    await expect(
+      createRenderer({ engine }).render({
+        input: await fixture('conflict.pdf'),
+        engine: 'local',
+        format: 'image',
+      })
+    ).rejects.toMatchObject({ code: 'usage_error' });
+  });
+
+  it('keeps local artifacts alive through writing and cleans them afterward', async () => {
+    const temporary = path.join(workDir, 'engine-temp.png');
+    let cleaned = false;
+    const engine: RenderEngine = {
+      name: 'temporary-local',
+      supports: () => true,
+      execute: async () => {
+        await fs.writeFile(temporary, 'pixels');
+        return {
+          artifacts: [{ page: 1, source: temporary, ext: '.png' }],
+          totalPages: 1,
+          cleanup: async () => {
+            cleaned = true;
+            await fs.rm(temporary, { force: true });
+          },
+        };
+      },
+    };
+    const output = path.join(workDir, 'written.png');
+
+    await createRenderer({ engine }).render({
+      input: await fixture('source.pdf'),
+      format: 'image',
+      out: output,
+    });
+
+    expect(await fs.readFile(output, 'utf8')).toBe('pixels');
+    expect(cleaned).toBe(true);
+    await expect(fs.access(temporary)).rejects.toThrow();
+  });
+
+  it('sorts two-digit artifact page numbers numerically before writing', async () => {
+    const frame = await fixture('frame.png', 'pixels');
+    const engine: RenderEngine = {
+      name: 'unordered-local',
+      supports: () => true,
+      execute: async () => ({
+        artifacts: [10, 2, 12, 1].map((page) => ({ page, source: frame, ext: '.png' })),
+        totalPages: 12,
+      }),
+    };
+
+    const result = await createRenderer({ engine }).render({
+      input: await fixture('unordered.pdf'),
+      format: 'image',
+      out: path.join(workDir, 'ordered'),
+    });
+
+    expect(result.outputs.map((output) => output.page)).toEqual([1, 2, 10, 12]);
+    expect(result.outputs.map((output) => path.basename(output.file))).toEqual([
+      '001.png',
+      '002.png',
+      '003.png',
+      '004.png',
+    ]);
+  });
+});
+
 describe('failure reporting', () => {
   it('wraps an invalid custom engine artifact as render_error', async () => {
+    let cleaned = false;
     const engine = {
       name: 'broken-js',
       supports: () => true,
       execute: async () => ({
         artifacts: [{ page: 1, ext: '.png' }],
         totalPages: 1,
+        cleanup: () => {
+          cleaned = true;
+        },
       }),
     } as unknown as RenderEngine;
 
@@ -355,6 +433,7 @@ describe('failure reporting', () => {
       expect(err.message).toContain('broken-js');
       expect(err.message).toContain('artifact 1.source');
       expect(err.message).not.toContain('ERR_INVALID_ARG_TYPE');
+      expect(cleaned).toBe(true);
     }
   });
 

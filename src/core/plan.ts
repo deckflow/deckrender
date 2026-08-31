@@ -1,7 +1,10 @@
 import type { DeckTaskType } from '@deckops/sdk';
 import { DeckRenderError } from '../errors/index.js';
+import { findLocalRoute, localPlannedReason, localSupportedTargets } from '../engines/local/routes.js';
 import type {
+  EnginePreference,
   ImageFormat,
+  LocalTaskType,
   Quality,
   RenderPlan,
   RenderStep,
@@ -21,6 +24,8 @@ import {
 import { validatePlanInput } from './validation.js';
 
 export interface PlanInput {
+  /** Concrete plan backend. `auto` is resolved before planning. */
+  engine?: Exclude<EnginePreference, 'auto'>;
   source: SourceFormat;
   target: TargetFormat;
   imageFormat?: ImageFormat;
@@ -67,6 +72,11 @@ const QUALITY_PRESETS: Record<Quality, { tiered: number; free: number; imageForm
 
 export function buildPlan(input: PlanInput): PlanResult {
   validatePlanInput(input);
+
+  if (input.engine === 'local') {
+    return buildLocalPlan(input);
+  }
+
   const warnings: PlanWarning[] = [];
   const route = findRoute(input.source, input.target);
 
@@ -106,6 +116,158 @@ export function buildPlan(input: PlanInput): PlanResult {
     },
     warnings,
   };
+}
+
+function buildLocalPlan(input: PlanInput): PlanResult {
+  const warnings: PlanWarning[] = [];
+  const route = findLocalRoute(input.source, input.target);
+
+  if (!route) {
+    throw unsupportedLocalFormat(input.source, input.target);
+  }
+
+  const effective = validateLocalOptions(input, route.tasks, warnings);
+  const steps: RenderStep[] =
+    route.kind === 'passthrough'
+      ? [{ task: 'passthrough', fanout: 'single', params: {} }]
+      : route.tasks.map((task) => ({
+          task,
+          fanout: 'single',
+          params: mapLocalParams(task, effective),
+        }));
+
+  return {
+    plan: {
+      source: effective.source,
+      target: effective.target,
+      imageFormat: localImageEncoding(effective),
+      kind: route.kind,
+      steps,
+      ...(effective.pages ? { pages: effective.pages } : {}),
+      ...(route.caveat ? { caveat: route.caveat } : {}),
+    },
+    warnings,
+  };
+}
+
+function unsupportedLocalFormat(source: SourceFormat, target: TargetFormat): DeckRenderError {
+  const planned = localPlannedReason(source, target);
+  if (planned) {
+    return DeckRenderError.notImplemented(
+      `Rendering .${source} to ${target} is not supported by the local engine yet.`,
+      { hint: planned }
+    );
+  }
+
+  const supported = localSupportedTargets(source);
+  const message =
+    supported.length > 0
+      ? `The local engine cannot render .${source} to ${target}. Supported outputs for .${source}: ${supported.join(', ')}.`
+      : `The local engine cannot render .${source}. This format is not supported locally.`;
+
+  return DeckRenderError.unsupportedFormat(message, {
+    hint: 'Run `deckrender formats --engine local`. To use the cloud matrix, choose `--engine cloud` explicitly.',
+  });
+}
+
+function validateLocalOptions(
+  input: PlanInput,
+  routeTasks: LocalTaskType[],
+  warnings: PlanWarning[]
+): PlanInput {
+  const effective: PlanInput = { ...input };
+  const soft = input.soft ?? new Set<SoftOption>();
+
+  const reject = (option: SoftOption, flag: string, message: string, hint?: string): void => {
+    if (soft.has(option)) {
+      warnings.push({ message: `Ignoring ${flag} from profile/config: ${message}` });
+      delete effective[option];
+      return;
+    }
+    throw DeckRenderError.unsupportedOption(message, hint ? { hint } : {});
+  };
+
+  if (effective.target !== 'image') {
+    const target = effective.target;
+    if (effective.width !== undefined) {
+      reject('width', '--width', `--width only applies to image output, not ${target}.`);
+    }
+    if (effective.scale !== undefined) {
+      reject('scale', '--scale', `--scale only applies to image output, not ${target}.`);
+    }
+    if (effective.imageFormat) {
+      reject('imageFormat', '--image-format', `--image-format only applies to image output, not ${target}.`);
+    }
+    if (effective.quality) {
+      reject('quality', '--quality', `--quality is not supported for ${target} output.`);
+    }
+    if (effective.pages) {
+      reject('pages', '--pages', `--pages is not supported for ${target} output, which is a single file.`);
+    }
+  }
+
+  if (effective.target === 'image' && effective.imageFormat === 'webp') {
+    reject(
+      'imageFormat',
+      '--image-format',
+      '--image-format webp is not supported by the local engine yet.',
+      'Use png or jpg, or choose --engine cloud for WebP output.'
+    );
+  }
+
+  if (effective.pages && !routeTasks.some((task) => task === 'local.capture' || task === 'local.pdfjs')) {
+    reject('pages', '--pages', `--pages is not supported for .${input.source} input.`);
+  }
+  if (effective.pages && input.source === 'html') {
+    reject(
+      'pages',
+      '--pages',
+      '--pages is not supported for local HTML capture because generic HTML is treated as one page.'
+    );
+  }
+
+  if (effective.embedFonts) {
+    reject(
+      'embedFonts',
+      '--embed-fonts',
+      '--embed-fonts is not supported by the local engine.',
+      'Local rendering uses installed system fonts and fonts already embedded in the input.'
+    );
+  }
+
+  return effective;
+}
+
+function mapLocalParams(task: LocalTaskType, input: PlanInput): Record<string, unknown> {
+  if (task !== 'local.capture' && task !== 'local.pdfjs') {
+    return {};
+  }
+
+  const params: Record<string, unknown> = {
+    imageFormat: localImageEncoding(input),
+  };
+  if (input.width !== undefined) {
+    params.width = input.width;
+  } else if (input.scale !== undefined) {
+    params.scale = input.scale;
+  } else if (input.quality) {
+    const preset = QUALITY_PRESETS[input.quality];
+    params.width = input.source === 'pptx' ? preset.tiered : preset.free;
+  }
+  if (localImageEncoding(input) === 'jpg') {
+    params.jpegQuality = input.quality === 'low' ? 72 : input.quality === 'high' ? 95 : 88;
+  }
+  return params;
+}
+
+function localImageEncoding(input: PlanInput): 'png' | 'jpg' {
+  if (input.imageFormat === 'jpg') {
+    return 'jpg';
+  }
+  if (input.imageFormat === 'png') {
+    return 'png';
+  }
+  return input.quality === 'low' ? 'jpg' : 'png';
 }
 
 /** Routes whose steps are fixed and take no parameters. */

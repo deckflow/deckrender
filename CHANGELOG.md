@@ -6,6 +6,41 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Changed
+
+- Refresh all four bundled office2html binaries from the 2026-08-31 build.
+- Render the new lazy-slides output directly from its validated, zero-based `slide-meta` manifest. PNG/JPEG and PDF use a bounded four-page worker pool while preserving public one-based page numbers and offline rendering.
+- Accept both the new `pages:` and legacy `Slides:` conversion summaries; retain legacy embedded-deck compatibility.
+
+### Fixed
+
+- Prevent the one-based filename assumption in the capture reference from skipping the first slide of zero-based converter output.
+- Add real-tarball installation checks proving each supported OS/CPU downloads and installs only one office2html package; unsupported platforms and `--omit=optional` download none.
+- Publish platform packages before the main package in the release workflow so optional dependencies are available at install time.
+
+## [0.3.0] - 2026-08-25
+
+### Added
+
+- Community/local engine with independent PPTX→image/PDF, PDF→image/PDF and HTML/URL→image routes.
+- `--engine local|cloud|auto`, `DECKRENDER_ENGINE`, and persisted `engine` configuration. `auto` is local-first and warns before choosing cloud; explicit local never uploads or falls back.
+- Local PPTX conversion via `office2html`, strict Chromium capture, CJK-safe PDF printing, numeric page merge, and only-selected-page image capture.
+- Local PDF rasterization through PDF.js in Chromium, including packaged CMaps and standard fonts.
+- Chrome/Chromium and office2html executable resolution with environment/config escape hatches.
+- Four repository-owned `@deckflow/office2html-<platform>` optional packages (macOS arm64/x64, Linux x64, Windows x64), with platform metadata and artifact hash verification.
+- `deckrender formats --engine ...` and engine-aware JSON capability matrices.
+
+### Changed
+
+- `RenderOptions.engine` accepts built-in engine names. The existing custom-engine API remains compatible through `createRenderer({ engine })`; one-shot `render()` accepts either form, and `customEngine` is available as an unambiguous spelling.
+- Local dependencies are optional and kept external to the CLI bundle, so cloud-only installs may use `--omit=optional`.
+- Engine artifacts may provide a cleanup callback. The common renderer consumes local files first and then cleans them on success or failure.
+- Engine output validation sorts artifacts by numeric page and rejects duplicates, preventing the 1/10/2 filename-order trap.
+
+### Security
+
+- Local PPTX/PDF routes do not resolve credentials or contact the DeckFlow API. The PPTX fast path blocks the CDN references currently emitted by office2html and uses local CSS/system-font fallbacks.
+
 ## [0.2.1] - 2026-08-21
 
 ### Fixed

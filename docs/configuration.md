@@ -86,6 +86,8 @@ deckrender auth status      # also verifies the credential against the backend
 Preferences you do not want to retype go in `~/.deckrender/config.json`, kept separate from credentials so changing a default never rewrites a file other tools read.
 
 ```bash
+deckrender config set engine local
+deckrender config set office2html-path /opt/deckflow/office2html
 deckrender config set profile web
 deckrender config set image-format webp
 deckrender config set width 2560
@@ -94,6 +96,8 @@ deckrender config unset width
 
 | Key            | Values                                      |
 | -------------- | ------------------------------------------- |
+| `engine`       | `local`, `cloud`, `auto`                    |
+| `office2html-path` | absolute/local executable path         |
 | `profile`      | `web`, `presentation`, `print`, `thumbnail` |
 | `format`       | `image`, `pdf`, `video`                     |
 | `image-format` | `png`, `jpg`, `webp`                        |
@@ -107,6 +111,8 @@ Precedence, lowest first:
 ```
 profile defaults  <  ~/.deckrender/config.json  <  command-line flags
 ```
+
+Engine selection additionally reads `DECKRENDER_ENGINE`, with precedence `--engine > environment > config > cloud`. Local executable overrides use `DECKRENDER_OFFICE2HTML_PATH` and `DECKRENDER_CHROMIUM_EXECUTABLE_PATH`; see [engines.md](engines.md).
 
 A stored default that a particular route cannot honour is dropped with a warning, not an error — only a flag you typed produces `unsupported_option`. So `config set image-format webp` will not break `deckrender notes.md`.
 

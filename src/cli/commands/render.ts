@@ -2,7 +2,7 @@ import { Command, Option } from 'commander';
 import { DeckRenderError } from '../../errors/index.js';
 import { createRenderer } from '../../core/renderer.js';
 import { readConfig } from '../../config/config.js';
-import { hasCredentials, resolveCredentials, writeSharedCredentials } from '../../config/credentials.js';
+import { resolveCredentials, writeSharedCredentials } from '../../config/credentials.js';
 import { runCheckoutFlow, runLoginFlow } from '../../auth/login.js';
 import { inferFromOutputPath } from '../../output/naming.js';
 import {
@@ -12,13 +12,16 @@ import {
   assertPositiveNumber,
 } from '../../core/validation.js';
 import { layerOptions, PROFILES } from '../profiles.js';
+import { resolveEnginePreference } from '../../core/engine-selection.js';
 import { addOutputFlags, Reporter, type OutputMode } from '../output.js';
 import {
+  ENGINE_PREFERENCES,
   IMAGE_FORMATS,
   PROFILE_NAMES,
   QUALITIES,
   SOURCE_FORMATS,
   TARGET_FORMATS,
+  type EnginePreference,
   type ImageFormat,
   type ProfileName,
   type Quality,
@@ -27,6 +30,7 @@ import {
 } from '../../types.js';
 
 interface RenderCliOptions {
+  engine?: EnginePreference;
   from?: SourceFormat;
   format?: TargetFormat;
   imageFormat?: ImageFormat;
@@ -39,6 +43,8 @@ interface RenderCliOptions {
   profile?: ProfileName;
   embedFonts?: boolean;
   timeout?: string;
+  executablePath?: string;
+  office2htmlPath?: string;
   json?: boolean;
   quiet?: boolean;
   verbose?: boolean;
@@ -53,6 +59,7 @@ export function registerRenderCommand(program: Command): void {
   addOutputFlags(program)
     .argument('[input]', 'File path, http(s) URL, or - for stdin')
     .option('-o, --output <path>', 'Output file, directory, .zip, or - for stdout')
+    .addOption(new Option('--engine <engine>', 'Render engine').choices([...ENGINE_PREFERENCES]))
     .addOption(new Option('--format <format>', 'Output format').choices([...TARGET_FORMATS]))
     .addOption(new Option('--image-format <format>', 'Image encoding').choices([...IMAGE_FORMATS]))
     .addOption(
@@ -66,6 +73,8 @@ export function registerRenderCommand(program: Command): void {
     .addOption(new Option('--profile <name>', 'Named flag preset').choices([...PROFILE_NAMES]))
     .option('--embed-fonts', 'Embed fonts on routes that pass through HTML to PPTX')
     .option('--timeout <seconds>', 'Task timeout in seconds')
+    .addOption(new Option('--executable-path <path>', 'Local Chromium executable').hideHelp())
+    .addOption(new Option('--office2html-path <path>', 'Local office2html executable').hideHelp())
     .addOption(new Option('--fps <n>', 'Video frame rate').hideHelp())
     .addOption(new Option('--duration <seconds>', 'Seconds per slide').hideHelp())
     .addOption(new Option('--transition <name>', 'Slide transition').hideHelp())
@@ -144,6 +153,7 @@ async function runRender(
   mode: OutputMode
 ): Promise<void> {
   const config = await readConfig();
+  const engine = resolveEnginePreference(options.engine, config.engine);
   const inferred = options.output ? inferFromOutputPath(options.output) : {};
 
   if (options.pages && options.page) {
@@ -186,24 +196,14 @@ async function runRender(
     }
   );
 
-  // `--format` derived from the output extension is explicit enough to keep
-  // hard, but everything inherited from a profile or config stays soft.
-  const credentials = await resolveCredentials();
-  const authenticated = hasCredentials(credentials);
-
   reporter.detail(`Input: ${input}`);
   reporter.detail(`Format: ${layered.format ?? 'image'}`);
-  reporter.detail(
-    `Credentials: ${authenticated ? (credentials.sources.apiKey ?? credentials.sources.token) : 'none (guest mode)'}`
-  );
+  reporter.detail(`Engine: ${engine}`);
 
   // Opening a browser only makes sense at a terminal. Under --json or in CI a
   // 401 has to fail as auth_error instead of hanging on a login nobody can
   // complete.
   const interactive = !mode.json && process.stdout.isTTY === true;
-  if (!interactive && !authenticated) {
-    reporter.detail('Non-interactive session: a 401 will fail rather than prompt for login.');
-  }
 
   const renderer = createRenderer({
     onWarning: (message) => reporter.warn(message),
@@ -211,6 +211,7 @@ async function runRender(
       ? {
           onUnauthorized: async () => {
             reporter.stopProgress();
+            const credentials = await resolveCredentials();
             const result = await runLoginFlow({
               apiBase: credentials.apiBase,
               onUrl: (url) => reporter.note(`Opening browser to ${url}`),
@@ -240,6 +241,7 @@ async function runRender(
 
   const result = await renderer.render({
     input,
+    engine,
     ...(options.from ? { from: options.from } : {}),
     ...(layered.format ? { format: layered.format } : {}),
     ...(layered.imageFormat ? { imageFormat: layered.imageFormat } : {}),
@@ -250,6 +252,10 @@ async function runRender(
     ...(layered.quality ? { quality: layered.quality } : {}),
     ...(layered.embedFonts !== undefined ? { embedFonts: layered.embedFonts } : {}),
     ...(layered.timeout !== undefined ? { timeout: layered.timeout } : {}),
+    ...((options.executablePath ?? undefined) ? { executablePath: options.executablePath } : {}),
+    ...((options.office2htmlPath ?? config.office2htmlPath)
+      ? { office2htmlPath: options.office2htmlPath ?? config.office2htmlPath }
+      : {}),
     soft,
     onProgress: (event) => reporter.progress(event.message),
   });

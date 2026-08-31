@@ -203,6 +203,20 @@ describe('output streams', () => {
     expect(payload.matrix.pdf.video).toMatchObject({ supported: false, planned: true });
     expect(payload.matrix.xlsx.video).toEqual({ supported: false, planned: false });
   });
+
+  it('prints the independent local matrix when selected', async () => {
+    const result = await cli(['formats', '--engine', 'local', '--json']);
+    expect(result.code).toBe(0);
+    const payload = JSON.parse(result.stdout);
+    expect(payload.engine).toBe('local');
+    expect(payload.matrix.pptx.image).toMatchObject({
+      supported: true,
+      engine: 'local',
+      tasks: ['local.office2html', 'local.capture'],
+    });
+    expect(payload.matrix.pptx.video).toEqual({ supported: false, planned: false });
+    expect(payload.matrix.docx.image).toMatchObject({ supported: false, planned: true });
+  });
 });
 
 describe('config', () => {
@@ -222,6 +236,12 @@ describe('config', () => {
     expect(payload.defaults).toMatchObject({ profile: 'web' });
     expect(payload.files.config).toContain('config.json');
     expect(payload.files.credentials).toContain('credentials');
+  });
+
+  it('stores the default engine as a render preference', async () => {
+    expect((await cli(['config', 'set', 'engine', 'local'])).code).toBe(0);
+    const list = await cli(['config', 'list', '--json']);
+    expect(JSON.parse(list.stdout).defaults.engine).toBe('local');
   });
 
   it('rejects an unknown key', async () => {

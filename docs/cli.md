@@ -12,6 +12,7 @@ deckrender <command> [options]
 | Flag                   | Description                                       | Default                        |
 | ---------------------- | ------------------------------------------------- | ------------------------------ |
 | `-o, --output <path>`  | Output file, directory, `.zip`, or `-` for stdout | Derived from the input         |
+| `--engine <engine>`    | `local`, `cloud`, `auto`                          | Config/env, then `cloud`       |
 | `--format <format>`    | `image`, `pdf`, `video`                           | `image`, or inferred from `-o` |
 | `--image-format <fmt>` | `png`, `jpg`, `webp`                              | `png`                          |
 | `--from <format>`      | Source format. Required for stdin                 | From the file extension        |
@@ -30,6 +31,8 @@ deckrender <command> [options]
 | `-h, --help`           | Show help                                         | —                              |
 
 `--quiet` and `--verbose` conflict.
+
+`--engine local` is strict: a missing local route or runtime dependency fails without uploading. `--engine auto` uses a matching local route first and warns before choosing cloud. See [engines.md](engines.md).
 
 Not every flag applies to every route — `--width` on Keynote input, for example, has no backend parameter to land on. Those cases fail with `unsupported_option` and an explanation rather than being ignored. See [formats.md](formats.md).
 
@@ -109,7 +112,7 @@ deckrender deck.pptx --page 3
 Pages are 1-based, capped at 100000, and ranges are inclusive. Requesting a page past the end of
 the document is an error.
 
-`--pages` filters at download time — **the backend still renders every page**, so this saves bandwidth and disk, not compute or cost. It does not apply to single-file output (pdf, video) or to HTML and Markdown, which produce one image.
+On cloud routes, `--pages` filters at download time — the backend still renders every page. On local PPTX/PDF image routes, only selected pages are captured/rasterized, so it also saves compute. It does not apply to single-file output (pdf, video) or to HTML and Markdown.
 
 For webp output the filter is applied before conversion, so narrowing the range also narrows the work.
 
@@ -138,11 +141,11 @@ For webp output the filter is applied before conversion, so narrowing the range 
 | Key                                                                   | Goes to                                                     |
 | --------------------------------------------------------------------- | ----------------------------------------------------------- |
 | `api-key`                                                             | `~/.deckflow/credentials` — shared with every DeckFlow tool |
-| `profile` `format` `image-format` `quality` `width` `scale` `timeout` | `~/.deckrender/config.json`                                 |
+| `engine` `office2html-path` `profile` `format` `image-format` `quality` `width` `scale` `timeout` | `~/.deckrender/config.json` |
 
 ### `deckrender formats`
 
-Prints the input/output matrix. `--json` gives the machine-readable form, including the exact backend task chain for each route.
+Prints the input/output matrix. Use `--engine local|cloud|auto`. `--json` includes the selected engine and exact task chain for each route.
 
 ## Exit codes
 
@@ -157,6 +160,7 @@ Prints the input/output matrix. `--json` gives the machine-readable form, includ
 
 ```bash
 deckrender deck.pptx
+deckrender deck.pptx --engine local -o frames/
 deckrender deck.pptx -o deck.pdf
 deckrender deck.pptx -o deck.mp4
 deckrender deck.pptx --profile web -o frames/

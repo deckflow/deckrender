@@ -103,7 +103,8 @@ export function registerConfigCommands(program: Command, modeOf: (cmd: Command) 
 
         lines.push('', chalk.bold('Render defaults'));
         for (const key of CONFIG_KEYS) {
-          const field = key === 'image-format' ? 'imageFormat' : key;
+          const field =
+            key === 'image-format' ? 'imageFormat' : key === 'office2html-path' ? 'office2htmlPath' : key;
           const value = (stored as Record<string, unknown>)[field];
           lines.push(`  ${key.padEnd(12)} ${value === undefined ? chalk.dim('(unset)') : String(value)}`);
         }

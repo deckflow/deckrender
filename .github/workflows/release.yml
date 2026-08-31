@@ -35,6 +35,7 @@ jobs:
           test "$TAG" = "$PKG" || { echo "Tag $TAG != package.json $PKG"; exit 1; }
 
       - run: node scripts/sync-version.mjs --check
+      - run: pnpm verify:office2html
 
       - run: pnpm typecheck
       - run: pnpm lint
@@ -42,6 +43,29 @@ jobs:
       - run: pnpm test:integration
       - run: pnpm build
       - run: pnpm test:e2e
+      - run: pnpm test:packaging
+
+      # Optional dependencies are allowed to be absent, so publish these first:
+      # otherwise the main package can install successfully without its runtime.
+      # Each package has its own guard so a partially completed release is safe
+      # to rerun, even when the main package was already published manually.
+      - name: Publish office2html platform packages
+        run: |
+          for PACKAGE in packages/office2html-*; do
+            NAME=$(node -p "require('./$PACKAGE/package.json').name")
+            VERSION=$(node -p "require('./$PACKAGE/package.json').version")
+            if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+              echo "$NAME@$VERSION is already on npm — skipping publish."
+              continue
+            fi
+            if [ -z "$NODE_AUTH_TOKEN" ]; then
+              echo "::error::NPM_TOKEN is not configured, so $NAME cannot be published."
+              exit 1
+            fi
+            pnpm --dir "$PACKAGE" publish --access public --no-git-checks --provenance
+          done
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       # A version already on npm is not a failure: the tag may have been pushed
       # after a manual publish, or re-pushed to rerun the checks. Publishing is

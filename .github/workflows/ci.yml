@@ -32,6 +32,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - run: pnpm verify:office2html
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm exec prettier --check 'src/**/*.ts' 'tests/**/*.ts'
@@ -42,6 +43,20 @@ jobs:
       # e2e drives the built binary, so it has to come after the build.
       - run: pnpm build
       - run: pnpm test:e2e
+
+      - name: Verify platform-specific package installation
+        if: matrix.node == 20
+        run: pnpm test:packaging
+
+      - name: Install Chromium for local engine regression tests
+        if: matrix.node == 20
+        run: pnpm exec playwright-core install --with-deps chromium
+
+      - name: Verify standalone slide rendering
+        if: matrix.node == 20
+        run: pnpm test:local
+        env:
+          DECKRENDER_LOCAL_E2E: '1'
 
       - name: Verify the version constant matches package.json
         run: node scripts/sync-version.mjs --check

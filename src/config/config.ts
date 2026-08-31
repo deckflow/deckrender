@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 import { z } from 'zod';
 import { DIR_MODE, configPath, deckrenderDir } from './paths.js';
 import { DeckRenderError } from '../errors/DeckRenderError.js';
-import { IMAGE_FORMATS, PROFILE_NAMES, QUALITIES, TARGET_FORMATS } from '../types.js';
+import { ENGINE_PREFERENCES, IMAGE_FORMATS, PROFILE_NAMES, QUALITIES, TARGET_FORMATS } from '../types.js';
 import { MAX_RENDER_SCALE, MAX_RENDER_WIDTH, MAX_TIMEOUT_SECONDS } from '../core/validation.js';
 
 /**
@@ -13,6 +13,8 @@ import { MAX_RENDER_SCALE, MAX_RENDER_WIDTH, MAX_TIMEOUT_SECONDS } from '../core
  */
 export const ConfigSchema = z
   .object({
+    engine: z.enum(ENGINE_PREFERENCES).optional(),
+    office2htmlPath: z.string().min(1).optional(),
     profile: z.enum(PROFILE_NAMES).optional(),
     format: z.enum(TARGET_FORMATS).optional(),
     imageFormat: z.enum(IMAGE_FORMATS).optional(),
@@ -27,6 +29,8 @@ export type ConfigData = z.infer<typeof ConfigSchema>;
 
 /** Config keys as written on the command line, e.g. `image-format`. */
 export const CONFIG_KEYS = [
+  'engine',
+  'office2html-path',
   'profile',
   'format',
   'image-format',
@@ -39,6 +43,8 @@ export const CONFIG_KEYS = [
 export type ConfigKey = (typeof CONFIG_KEYS)[number];
 
 const KEY_TO_FIELD: Record<ConfigKey, keyof ConfigData> = {
+  engine: 'engine',
+  'office2html-path': 'office2htmlPath',
   profile: 'profile',
   format: 'format',
   'image-format': 'imageFormat',
@@ -76,6 +82,7 @@ export async function writeConfig(data: ConfigData): Promise<string> {
 
 /** Values each enum-valued key accepts, for validation and for help text. */
 const ALLOWED_VALUES: Partial<Record<ConfigKey, readonly string[]>> = {
+  engine: ENGINE_PREFERENCES,
   profile: PROFILE_NAMES,
   format: TARGET_FORMATS,
   'image-format': IMAGE_FORMATS,

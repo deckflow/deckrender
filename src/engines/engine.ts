@@ -10,16 +10,16 @@ export interface EngineOutput {
   artifacts: RenderArtifact[];
   /** Pages the document rendered to, before `--pages` filtering. */
   totalPages: number;
+  /** Release temporary engine resources after the artifact writer has consumed them. */
+  cleanup?: () => Promise<void> | void;
 }
 
 /**
  * A render backend.
  *
- * DeckRender ships exactly one: the cloud engine. The interface stays because
- * the plan, parameter mapping, artifact naming and output envelope are all
- * engine-agnostic, so a caller can substitute its own backend. It is not an
- * invitation to add a local renderer here — an unsupported format is reported
- * as unsupported until the backend can convert it.
+ * DeckRender ships cloud and local implementations. The plan, parameter
+ * mapping, artifact naming and output envelope stay engine-agnostic, and a
+ * caller may still substitute a custom backend.
  */
 export interface RenderEngine {
   readonly name: string;

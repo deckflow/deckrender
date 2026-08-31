@@ -18,7 +18,12 @@ export function validateEngineOutput(engineName: string, value: unknown): Engine
     throw invalidOutput(engineName, 'totalPages must be a positive integer.');
   }
 
-  const artifacts = output.artifacts.map((artifact, index) => validateArtifact(engineName, artifact, index));
+  const artifacts = output.artifacts
+    .map((artifact, index) => validateArtifact(engineName, artifact, index))
+    .sort((a, b) => a.page - b.page);
+  if (new Set(artifacts.map((artifact) => artifact.page)).size !== artifacts.length) {
+    throw invalidOutput(engineName, 'artifact page numbers must be unique.');
+  }
   const highestPage = Math.max(...artifacts.map((artifact) => artifact.page));
   if (output.totalPages < highestPage) {
     throw invalidOutput(
@@ -27,7 +32,17 @@ export function validateEngineOutput(engineName: string, value: unknown): Engine
     );
   }
 
-  return { artifacts, totalPages: output.totalPages };
+  if (output.cleanup !== undefined && typeof output.cleanup !== 'function') {
+    throw invalidOutput(engineName, 'cleanup must be a function when present.');
+  }
+
+  return {
+    artifacts,
+    totalPages: output.totalPages,
+    ...(typeof output.cleanup === 'function'
+      ? { cleanup: output.cleanup as () => Promise<void> | void }
+      : {}),
+  };
 }
 
 function validateArtifact(engineName: string, value: unknown, index: number): RenderArtifact {

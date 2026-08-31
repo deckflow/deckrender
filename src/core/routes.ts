@@ -9,9 +9,9 @@ import type { RouteKind, SourceFormat, TargetFormat } from '../types.js';
  * Absence from this table is the single source of truth for
  * `unsupported_format`.
  *
- * The cloud is the only renderer. A format the backend cannot convert is not
- * supported, and stays that way until the backend gains a task for it — the
- * fix belongs upstream, never in a local fallback here.
+ * This is the cloud matrix only. A format the backend cannot convert stays a
+ * visible cloud gap until DeckOps gains a task; the separate local matrix must
+ * not be used to make this table look wider than the managed service is.
  */
 export interface BaseRoute {
   kind: RouteKind;

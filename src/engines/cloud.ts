@@ -74,7 +74,10 @@ export class CloudEngine implements RenderEngine {
   supports(plan: RenderPlan): boolean {
     // Passthrough never reaches an engine; everything else in the matrix maps
     // to DeckOps task types by construction.
-    return plan.kind !== 'passthrough';
+    return (
+      plan.kind !== 'passthrough' &&
+      plan.steps.every((step) => step.task !== 'passthrough' && !step.task.startsWith('local.'))
+    );
   }
 
   async execute(plan: RenderPlan, ctx: ExecuteContext): Promise<EngineOutput> {

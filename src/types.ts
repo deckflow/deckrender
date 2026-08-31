@@ -1,5 +1,19 @@
 import type { DeckTaskType } from '@deckops/sdk';
 
+/** Built-in render backend selection. `auto` prefers a capable local route. */
+export const ENGINE_PREFERENCES = ['local', 'cloud', 'auto'] as const;
+export type EnginePreference = (typeof ENGINE_PREFERENCES)[number];
+
+/** Tasks understood by the bundled Community/local engine. */
+export const LOCAL_TASK_TYPES = [
+  'local.office2html',
+  'local.capture',
+  'local.capture-pdf',
+  'local.pdf-merge',
+  'local.pdfjs',
+] as const;
+export type LocalTaskType = (typeof LOCAL_TASK_TYPES)[number];
+
 /** Output artifact families DeckRender can produce. */
 export const TARGET_FORMATS = ['image', 'pdf', 'video'] as const;
 export type TargetFormat = (typeof TARGET_FORMATS)[number];
@@ -39,10 +53,10 @@ export type ProfileName = (typeof PROFILE_NAMES)[number];
 /**
  * A step in a RenderPlan.
  *
- * Every step but `passthrough` is a DeckOps task: rendering happens in the
- * cloud. `passthrough` copies the input unchanged, which is not a render.
+ * Cloud plans contain DeckOps tasks; local plans contain LocalTaskType values.
+ * `passthrough` copies the input unchanged, which is not a render.
  */
-export type RenderStepTask = DeckTaskType | 'passthrough';
+export type RenderStepTask = DeckTaskType | LocalTaskType | 'passthrough';
 
 export interface RenderStep {
   task: RenderStepTask;
@@ -108,6 +122,8 @@ export interface RenderInput {
 export interface RenderOptions {
   /** File path, URL, or `-` for stdin. */
   input: string;
+  /** Built-in engine. `auto` prefers local and never silently uploads from an explicit local choice. */
+  engine?: EnginePreference;
   /** Explicit source format. Required for stdin. */
   from?: SourceFormat;
   format?: TargetFormat;
@@ -125,6 +141,10 @@ export interface RenderOptions {
   embedFonts?: boolean;
   /** Task wait timeout in seconds. */
   timeout?: number;
+  /** Chromium/Chrome executable used by the local engine. */
+  executablePath?: string;
+  /** office2html executable used by local PPTX routes. */
+  office2htmlPath?: string;
   /**
    * Options that came from a profile or config file rather than being chosen
    * explicitly. A route that cannot honour these drops them with a warning

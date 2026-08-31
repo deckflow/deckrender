@@ -1,6 +1,6 @@
 {
   "name": "@deckflow/deckrender",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Render PPTX, PDF, DOCX, Keynote, HTML and Markdown into images, PDF or video. One command, predictable output.",
   "type": "module",
   "main": "./dist/index.js",
@@ -28,13 +28,16 @@
     "test:integration": "vitest run tests/integration",
     "test:e2e": "vitest run tests/e2e",
     "test:cloud": "vitest run tests/e2e/cloud.test.ts",
+    "test:local": "vitest run tests/e2e/local.test.ts tests/e2e/lazy-slides.test.ts",
+    "verify:office2html": "node scripts/verify-office2html.mjs",
+    "test:packaging": "node scripts/verify-office2html-install.mjs",
     "test:consumer": "node node_modules/typescript-7/bin/tsc -p tests/consumer/tsconfig.json",
     "test:conformance": "node scripts/conformance.mjs",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src tests --ext .ts",
     "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
     "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
-    "check": "pnpm typecheck && pnpm lint && pnpm test:unit && pnpm test:integration && pnpm build && pnpm test:consumer"
+    "check": "pnpm verify:office2html && pnpm typecheck && pnpm lint && pnpm test:unit && pnpm test:integration && pnpm build && pnpm test:consumer"
   },
   "keywords": [
     "cli",
@@ -81,5 +84,14 @@
   "engines": {
     "node": ">=18.0.0"
   },
-  "packageManager": "pnpm@9.15.0"
+  "packageManager": "pnpm@9.15.0",
+  "optionalDependencies": {
+    "@deckflow/office2html-darwin-arm64": "workspace:*",
+    "@deckflow/office2html-darwin-x64": "workspace:*",
+    "@deckflow/office2html-linux-x64": "workspace:*",
+    "@deckflow/office2html-win32-x64": "workspace:*",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "4.8.69",
+    "playwright-core": "1.55.1"
+  }
 }

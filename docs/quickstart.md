@@ -15,6 +15,15 @@ deckrender --version
 
 Requires Node.js 18 or newer. No credentials needed to start.
 
+The compatible default is cloud guest mode. For Community rendering on your machine, install/configure Chrome, then select local. The matching `office2html` platform package is installed automatically:
+
+```bash
+deckrender config set engine local
+deckrender deck.pptx -o frames/
+```
+
+See [engines.md](engines.md) for dependency resolution and privacy details.
+
 ## Render a deck
 
 ```bash
@@ -54,7 +63,7 @@ deckrender report.pdf --pages 1-5 --width 2560 -o pages/
 deckrender report.pdf --page 1 --width 640 -o thumb.png
 ```
 
-`--pages` filters what gets downloaded — the backend still renders the whole document, so this saves bandwidth, not cost.
+On cloud routes `--pages` filters downloads after rendering. On local PPTX/PDF image routes only the selected pages are captured, so it also saves compute.
 
 ## Other inputs
 
@@ -120,4 +129,5 @@ deckrender config list    # shows every value and where it came from
 
 - [CLI reference](cli.md) — every command and flag
 - [Formats](formats.md) — what converts to what, and which flags each route accepts
+- [Engines](engines.md) — Community/local and cloud setup and boundaries
 - [Configuration](configuration.md) — credentials and render defaults

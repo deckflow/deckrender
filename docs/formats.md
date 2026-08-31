@@ -2,10 +2,12 @@
 
 ```bash
 deckrender formats          # print this matrix in your terminal
+deckrender formats --engine local
+deckrender formats --engine auto
 deckrender formats --json   # machine-readable, includes the backend task chain
 ```
 
-## What converts to what
+## Cloud matrix
 
 | Input                   | → image | → pdf | → video |
 | ----------------------- | ------- | ----- | ------- |
@@ -25,7 +27,18 @@ Image output supports `png`, `jpg` and `webp`.
 
 **🕓** means the DeckFlow cloud cannot convert it yet. Those fail with `not_implemented` and a message naming the missing backend task, rather than pretending the combination is impossible. What each one waits on is listed under [Coming soon](roadmap.md#coming-soon) in the roadmap.
 
-Every ✅ in this table is a cloud conversion. DeckRender renders nothing itself, so the matrix is exactly what the backend can do — no more, and nothing approximated locally to widen it. See [Where rendering happens](#where-rendering-happens).
+Every ✅ in this table is a cloud conversion. A cloud gap is not concealed by the local matrix.
+
+## Community/local matrix
+
+| Input                   | → image | → pdf | → video |
+| ----------------------- | ------- | ----- | ------- |
+| `.pptx`                 | ✅      | ✅    | —       |
+| `.pdf`                  | ✅      | ✅    | —       |
+| `.html` `.htm` and URLs | ✅      | 🕓    | —       |
+| `.ppt` `.key` `.docx` `.doc` `.xlsx` `.pages` `.numbers` `.md` | 🕓 | 🕓 | — |
+
+Local image output supports PNG and JPEG. WebP reports `unsupported_option`; it never becomes a hidden cloud conversion. The planned rows wait on `office2html` format support.
 
 A pair with no route at all — and none planned — fails immediately with the alternatives spelled out:
 
@@ -44,6 +57,8 @@ Error: Cannot render .docx to video. Supported outputs for .docx: image, pdf.
 
 Not every option applies everywhere. What a route can honour depends on how the image is produced, which is why `docx → image` accepts `--width` while `docx → pdf` does not.
 
+The cloud flag matrix is:
+
 | Input → image    | `--width` / `--scale`        | `--image-format` | `--pages`   |
 | ---------------- | ---------------------------- | ---------------- | ----------- |
 | `.pptx` `.ppt`   | ✅ snapped to 1080/1920/2560 | png, jpg, webp   | ✅          |
@@ -55,15 +70,23 @@ Not every option applies everywhere. What a route can honour depends on how the 
 
 `webp` works everywhere: it is produced by a separate conversion step rather than by the renderer itself.
 
+The local flag matrix is:
+
+| Input → image    | `--width` / `--scale` | `--image-format` | `--pages` |
+| ---------------- | --------------------- | ---------------- | --------- |
+| `.pptx`          | ✅ continuous         | png, jpg         | ✅ only selected pages are captured |
+| `.pdf`           | ✅ continuous         | png, jpg         | ✅ only selected pages are rasterized |
+| `.html` and URLs | ✅                    | png, jpg         | ✗ generic capture |
+
 PDF and video output accept no sizing, encoding, quality or page options — the backend tasks have no such parameters.
 
 ## Where rendering happens
 
-**Rendering happens in the DeckFlow cloud.** The document is uploaded over HTTPS, converted there, and the resulting artifacts are downloaded back. There is no local render path and no local fallback: if the backend cannot convert something, DeckRender says so instead of approximating it here.
-
-| Route                    | Where          | What leaves your machine                    |
+| Engine/route             | Where          | What leaves your machine                    |
 | ------------------------ | -------------- | ------------------------------------------- |
-| everything in the matrix | DeckFlow cloud | the document, and any intermediate artifact |
+| `local` PPTX/PDF         | your machine   | no document bytes                           |
+| `local` HTML/URL         | your machine   | no DeckFlow upload; requested remote assets may be fetched |
+| `cloud`                  | DeckFlow cloud | the document, and any intermediate artifact |
 | `.pdf` → pdf             | your machine   | nothing — the file is copied as-is          |
 
 `.pdf → pdf` is the single exception, and it is not a render: the input is already in the target format, so the file is copied. No backend has a task for it, and uploading a PDF to get the same PDF back would be pure waste.
@@ -77,7 +100,7 @@ $ deckrender deck.pptx -o out/ --json | jq -r .engine
 cloud
 ```
 
-`cloud` means the bytes were uploaded; `passthrough` means they were not. What DeckFlow does with an uploaded document — retention, processing, deletion — is the cloud service's policy, not this client's: see [deckflow.com](https://app.deckflow.com). **If a document may not leave your machine, DeckRender is not the tool for it** — settle that before adopting it.
+`local` and `passthrough` mean document bytes were not uploaded to DeckFlow. `cloud` means they were. An explicit local selection never falls back; only `auto` may select cloud, with a warning. See [engines.md](engines.md) for setup, network boundaries and fidelity caveats.
 
 ## Per-format notes
 
@@ -145,4 +168,4 @@ Offering a value that always fails would be worse than leaving it out.
 
 ## Behind the matrix
 
-`deckrender formats --json` reports how each combination is produced, if you need it. The matrix is verified end to end by `scripts/conformance.mjs`, which renders a real document through every combination and diffs the result against this page.
+`deckrender formats --engine <engine> --json` reports how each combination is produced, including the engine and ordered task list. The cloud matrix is verified by `scripts/conformance.mjs`; local contract, planning, ordering and real-browser routes have their own tests.

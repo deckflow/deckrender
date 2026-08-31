@@ -2,6 +2,7 @@ import path from 'node:path';
 import { createDeck, type DeckClient } from '@deckops/sdk';
 import { credentialsRejected, DeckRenderError } from '../errors/index.js';
 import { CloudEngine } from '../engines/cloud.js';
+import { LocalEngine } from '../engines/local/index.js';
 import { validateEngineOutput } from '../engines/validate.js';
 import type { EngineOutput, RenderEngine } from '../engines/engine.js';
 import { inputBaseName, resolveInput } from '../input/resolve.js';
@@ -13,16 +14,23 @@ import {
   resolveCredentials,
   type CredentialOverrides,
 } from '../config/credentials.js';
-import type { RenderArtifact, RenderOptions, RenderResult } from '../types.js';
+import type { EnginePreference, RenderArtifact, RenderOptions, RenderResult } from '../types.js';
 import { parsePageSelection } from './pages.js';
 import { buildPlan } from './plan.js';
 import { validateRenderOptions } from './validation.js';
+import { concreteEngineFor, resolveEnginePreference } from './engine-selection.js';
 
 export interface RendererOptions extends CredentialOverrides {
   /** Pre-built DeckOps client. Supplying one skips credential resolution. */
   client?: DeckClient;
-  /** Custom engine. Overrides the built-in cloud engine. */
+  /** Custom engine. Overrides built-in engine construction. */
   engine?: RenderEngine;
+  /** Preferred spelling for a custom engine; `engine` remains for compatibility. */
+  customEngine?: RenderEngine;
+  /** Local Chromium override. */
+  executablePath?: string;
+  /** Local office2html override. */
+  office2htmlPath?: string;
   /** Called with non-fatal notices, e.g. a snapped resolution. */
   onWarning?: (message: string) => void;
   /** Interactive login hook, invoked by the SDK on a 401. */
@@ -42,12 +50,29 @@ export function createRenderer(rendererOptions: RendererOptions = {}): Renderer 
 }
 
 /** One-shot render. Equivalent to `createRenderer(opts).render(opts)`. */
-export function render(options: RenderOptions & RendererOptions): Promise<RenderResult> {
-  return runRender(options, options);
+export type OneShotRenderOptions = Omit<RenderOptions, 'engine'> &
+  Omit<RendererOptions, 'engine'> & {
+    /** Built-in engine name, or the legacy custom RenderEngine value. */
+    engine?: EnginePreference | RenderEngine;
+  };
+
+export function render(options: OneShotRenderOptions): Promise<RenderResult> {
+  const { engine, ...shared } = options;
+  if (typeof engine === 'object' && engine !== null) {
+    return runRender(shared, { ...shared, engine });
+  }
+  return runRender({ ...shared, ...(engine ? { engine } : {}) } as RenderOptions, shared as RendererOptions);
 }
 
 async function runRender(options: RenderOptions, rendererOptions: RendererOptions): Promise<RenderResult> {
   validateRenderOptions(options);
+  const configuredCustomEngine = rendererOptions.customEngine ?? rendererOptions.engine;
+  if (configuredCustomEngine && options.engine) {
+    throw DeckRenderError.usage(
+      'A built-in engine name cannot be combined with a caller-supplied custom engine.',
+      { hint: 'Remove RenderOptions.engine, or create a renderer without a custom engine.' }
+    );
+  }
   const startedAt = Date.now();
   const warn = rendererOptions.onWarning ?? (() => undefined);
 
@@ -55,11 +80,22 @@ async function runRender(options: RenderOptions, rendererOptions: RendererOption
   const input = await resolveInput(options.input, options.from ? { from: options.from } : {});
 
   const pages = options.pages ? parsePageSelection(options.pages) : undefined;
+  const target = options.format ?? 'image';
+  const customEngine = configuredCustomEngine;
+  const preference =
+    customEngine || rendererOptions.client
+      ? (options.engine ?? 'cloud')
+      : resolveEnginePreference(options.engine);
+  const concrete = concreteEngineFor(preference, input.format, target);
+  if (concrete.fellBackToCloud) {
+    warn(`falling back to cloud for .${input.format} → ${target}`);
+  }
 
   options.onProgress?.({ phase: 'plan', message: 'Building render plan' });
   const { plan, warnings } = buildPlan({
+    engine: concrete.engine,
     source: input.format,
-    target: options.format ?? 'image',
+    target,
     ...(options.imageFormat ? { imageFormat: options.imageFormat } : {}),
     ...(options.width !== undefined ? { width: options.width } : {}),
     ...(options.scale !== undefined ? { scale: options.scale } : {}),
@@ -80,27 +116,31 @@ async function runRender(options: RenderOptions, rendererOptions: RendererOption
     warn(`via ${route} (${plan.steps.length} steps)`);
   }
 
-  const executed = await executePlan(plan, input, options, rendererOptions, warn);
+  const executed = await executePlan(plan, input, options, rendererOptions, concrete.engine, warn);
 
-  options.onProgress?.({ phase: 'write', message: 'Writing artifacts' });
-  const written = await writeArtifacts(executed.artifacts, {
-    ...(options.out ? { out: options.out } : {}),
-    baseName: inputBaseName(input),
-    baseDir: input.kind === 'file' && input.path ? path.dirname(input.path) : process.cwd(),
-    ...(options.onProgress ? { onProgress: options.onProgress } : {}),
-  });
+  try {
+    options.onProgress?.({ phase: 'write', message: 'Writing artifacts' });
+    const written = await writeArtifacts(executed.artifacts, {
+      ...(options.out ? { out: options.out } : {}),
+      baseName: inputBaseName(input),
+      baseDir: input.kind === 'file' && input.path ? path.dirname(input.path) : process.cwd(),
+      ...(options.onProgress ? { onProgress: options.onProgress } : {}),
+    });
 
-  return {
-    ok: true,
-    input: input.display,
-    format: plan.target,
-    engine: executed.engine,
-    route: plan.steps.map((step) => step.task),
-    pages: executed.totalPages,
-    outputs: written.entries,
-    durationMs: Date.now() - startedAt,
-    ...(plan.caveat ? { caveat: plan.caveat } : {}),
-  };
+    return {
+      ok: true,
+      input: input.display,
+      format: plan.target,
+      engine: executed.engine,
+      route: plan.steps.map((step) => step.task),
+      pages: executed.totalPages,
+      outputs: written.entries,
+      durationMs: Date.now() - startedAt,
+      ...(plan.caveat ? { caveat: plan.caveat } : {}),
+    };
+  } finally {
+    await safeCleanup(executed.cleanup);
+  }
 }
 
 async function executePlan(
@@ -108,6 +148,7 @@ async function executePlan(
   input: Awaited<ReturnType<typeof resolveInput>>,
   options: RenderOptions,
   rendererOptions: RendererOptions,
+  plannedEngine: Exclude<EnginePreference, 'auto'>,
   warn: (message: string) => void
 ): Promise<EngineOutput & { engine: string }> {
   // Passthrough: the input is already in the target format, so no backend work
@@ -124,12 +165,22 @@ async function executePlan(
     return { artifacts: [artifact], totalPages: 1, engine: 'passthrough' };
   }
 
-  // Everything else renders in the cloud. DeckRender ships no local renderer:
-  // a format the backend cannot convert is reported as unsupported rather than
-  // approximated here.
-  const selection: EngineSelection = rendererOptions.engine
-    ? { engine: rendererOptions.engine }
-    : await createCloudEngine(options, rendererOptions);
+  const customEngine = rendererOptions.customEngine ?? rendererOptions.engine;
+  const selection: EngineSelection = customEngine
+    ? { engine: customEngine }
+    : plannedEngine === 'local'
+      ? {
+          engine: new LocalEngine({
+            ...(options.timeout !== undefined ? { timeout: options.timeout } : {}),
+            ...((options.executablePath ?? rendererOptions.executablePath)
+              ? { executablePath: options.executablePath ?? rendererOptions.executablePath }
+              : {}),
+            ...((options.office2htmlPath ?? rendererOptions.office2htmlPath)
+              ? { office2htmlPath: options.office2htmlPath ?? rendererOptions.office2htmlPath }
+              : {}),
+          }),
+        }
+      : await createCloudEngine(options, rendererOptions);
 
   const { engine } = selection;
   if (!engine.supports(plan)) {
@@ -163,8 +214,26 @@ async function run(
   context: { input: Awaited<ReturnType<typeof resolveInput>>; onProgress?: RenderOptions['onProgress'] }
 ): Promise<EngineOutput & { engine: string }> {
   const rawOutput: unknown = await engine.execute(plan, context);
-  const output = validateEngineOutput(engine.name, rawOutput);
-  return { ...output, engine: engine.name };
+  try {
+    const output = validateEngineOutput(engine.name, rawOutput);
+    return { ...output, engine: engine.name };
+  } catch (error) {
+    const cleanup =
+      rawOutput && typeof rawOutput === 'object' ? (rawOutput as { cleanup?: unknown }).cleanup : undefined;
+    if (typeof cleanup === 'function') {
+      await safeCleanup(cleanup as () => Promise<void> | void);
+    }
+    throw error;
+  }
+}
+
+async function safeCleanup(cleanup?: () => Promise<void> | void): Promise<void> {
+  try {
+    await cleanup?.();
+  } catch {
+    // Cleanup is best-effort and must never turn a completed render or a more
+    // useful validation error into a generic filesystem failure.
+  }
 }
 
 interface EngineSelection {

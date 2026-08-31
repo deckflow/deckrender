@@ -7,7 +7,13 @@
  *   await render({ input: 'deck.pptx', format: 'image', pages: '1-10', out: 'frames/' });
  */
 
-export { createRenderer, render, type Renderer, type RendererOptions } from './core/renderer.js';
+export {
+  createRenderer,
+  render,
+  type OneShotRenderOptions,
+  type Renderer,
+  type RendererOptions,
+} from './core/renderer.js';
 
 export { buildPlan, type PlanInput, type PlanResult, type SoftOption } from './core/plan.js';
 export {
@@ -17,6 +23,12 @@ export {
   MAX_TIMEOUT_SECONDS,
 } from './core/validation.js';
 export { applyPageSelection, parsePageSelection } from './core/pages.js';
+export {
+  DECKRENDER_ENGINE_ENV,
+  concreteEngineFor,
+  resolveEnginePreference,
+  type ConcreteEngineSelection,
+} from './core/engine-selection.js';
 export {
   ROUTES,
   KNOWN_UNRENDERABLE_EXTENSIONS,
@@ -32,6 +44,19 @@ export {
 } from './core/routes.js';
 
 export { CloudEngine, type CloudEngineOptions } from './engines/cloud.js';
+export {
+  CHROMIUM_PATH_ENV,
+  LOCAL_NOT_IMPLEMENTED,
+  LOCAL_ROUTES,
+  LocalEngine,
+  OFFICE2HTML_PATH_ENV,
+  findLocalRoute,
+  localPlannedReason,
+  localSupportedTargets,
+  resolveOffice2htmlBinary,
+  type LocalEngineOptions,
+  type LocalRoute,
+} from './engines/local/index.js';
 export { normalizeTaskResult, extensionOf } from './engines/artifacts.js';
 export type { EngineOutput, ExecuteContext, RenderEngine } from './engines/engine.js';
 

@@ -1,0 +1,29 @@
+{
+  "name": "@deckflow/office2html-darwin-x64",
+  "version": "0.3.0",
+  "description": "office2html binary for macOS x64, distributed with DeckRender Community",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/deckflow/deckrender.git",
+    "directory": "packages/office2html-darwin-x64"
+  },
+  "os": [
+    "darwin"
+  ],
+  "cpu": [
+    "x64"
+  ],
+  "bin": {
+    "office2html": "bin/office2html"
+  },
+  "files": [
+    "bin",
+    "README.md",
+    "LICENSE"
+  ],
+  "preferUnplugged": true,
+  "publishConfig": {
+    "access": "public"
+  }
+}

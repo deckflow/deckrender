@@ -8,5 +8,8 @@ export default defineConfig({
   clean: true,
   sourcemap: true,
   splitting: false,
+  // Local-engine dependencies stay optional so cloud-only installations can
+  // use --omit=optional without bloating the CLI bundle.
+  external: ['playwright-core', 'pdfjs-dist', 'pdf-lib'],
   banner: { js: '' },
 });

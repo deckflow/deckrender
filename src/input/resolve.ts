@@ -144,7 +144,13 @@ async function resolveFile(spec: string, options: ResolveInputOptions): Promise<
   }
 
   if (INLINE_FORMATS.includes(format)) {
-    return { kind: 'file', format, text: await fs.readFile(absolute, 'utf-8'), display: spec };
+    return {
+      kind: 'file',
+      format,
+      path: absolute,
+      text: await fs.readFile(absolute, 'utf-8'),
+      display: spec,
+    };
   }
 
   return { kind: 'file', format, path: absolute, display: spec };

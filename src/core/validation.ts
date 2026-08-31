@@ -1,5 +1,6 @@
 import { DeckRenderError } from '../errors/index.js';
 import {
+  ENGINE_PREFERENCES,
   IMAGE_FORMATS,
   PROFILE_NAMES,
   QUALITIES,
@@ -25,6 +26,9 @@ export function validateRenderOptions(options: RenderOptions): void {
 
   if (options.from !== undefined) {
     assertEnum('source format', options.from, SOURCE_FORMATS);
+  }
+  if (options.engine !== undefined) {
+    assertEnum('engine', options.engine, ENGINE_PREFERENCES);
   }
   if (options.format !== undefined) {
     assertEnum('target format', options.format, TARGET_FORMATS);
@@ -53,6 +57,12 @@ export function validateRenderOptions(options: RenderOptions): void {
       max: MAX_TIMEOUT_SECONDS,
     });
   }
+  if (options.executablePath !== undefined && typeof options.executablePath !== 'string') {
+    throw DeckRenderError.usage('Invalid executablePath: expected a path string.');
+  }
+  if (options.office2htmlPath !== undefined && typeof options.office2htmlPath !== 'string') {
+    throw DeckRenderError.usage('Invalid office2htmlPath: expected a path string.');
+  }
   if (options.pages !== undefined && typeof options.pages !== 'string') {
     throw DeckRenderError.usage('Invalid pages: expected a page selection string.');
   }
@@ -74,6 +84,10 @@ export function validatePlanInput(input: PlanInput): void {
 
   assertEnum('source format', input.source, SOURCE_FORMATS);
   assertEnum('target format', input.target, TARGET_FORMATS);
+
+  if (input.engine !== undefined) {
+    assertEnum('plan engine', input.engine, ['local', 'cloud']);
+  }
 
   if (input.imageFormat !== undefined) {
     assertEnum('image format', input.imageFormat, IMAGE_FORMATS);
