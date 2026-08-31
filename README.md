@@ -136,7 +136,8 @@ The local engine does not resolve or send credentials.
 
 ## Use it as a library
 
-The CLI and the programmatic API ship in the same package.
+The CLI and the programmatic API ship in the same package. The root import is the
+Node.js API; browser applications use the separate cloud-only entry below.
 
 ```ts
 import { render } from '@deckflow/deckrender';
@@ -164,6 +165,25 @@ const renderer = createRenderer({
 });
 ```
 
+### Browser applications
+
+```ts
+import { createRenderer } from '@deckflow/deckrender/browser';
+
+const renderer = createRenderer({ getToken: () => auth.getDeckFlowToken() });
+const result = await renderer.render({ input: file, format: 'image', pages: '1-3' });
+
+previewImage.src = result.outputs[0]!.url;
+// When removing the preview:
+result.dispose();
+```
+
+The SDK accepts `File`, named `Blob`/binary input, and inline HTML/Markdown. It
+returns URLs with lazy `blob()` downloads instead of writing files. Rendering is
+cloud-only (PDF passthrough stays in memory); no Node polyfills are required.
+Use a user token or explicitly opt into `guest: true`, never embed an application
+API key. See [Browser SDK](docs/browser.md) for authentication, CORS, and lifecycle details.
+
 ## Documentation
 
 |                                        |                                                         |
@@ -176,6 +196,7 @@ const renderer = createRenderer({
 | [Errors](docs/errors.md)               | Error codes and exit codes                              |
 | [Roadmap](docs/roadmap.md)             | What is coming and what is blocked upstream             |
 | [Engines](docs/engines.md)             | Local/cloud selection, setup, privacy and fidelity       |
+| [Browser SDK](docs/browser.md)        | Cloud-only browser entry, inputs, previews, auth and CORS |
 
 ## How it works
 

@@ -102,11 +102,11 @@ export interface RenderArtifact {
 }
 
 export interface RenderInput {
-  kind: 'file' | 'url' | 'stdin';
+  kind: 'file' | 'url' | 'stdin' | 'memory';
   format: SourceFormat;
   /** Absolute local path, when the source is a file the engine can upload. */
   path?: string;
-  /** In-memory bytes for stdin and downloaded URLs — no temp file needed. */
+  /** In-memory bytes for stdin, downloaded URLs, and browser input — no temp file needed. */
   bytes?: Uint8Array;
   /** Upload filename for `bytes`. */
   name?: string;
@@ -115,7 +115,7 @@ export interface RenderInput {
    * uploads them as source files; no temporary local file is needed.
    */
   text?: string;
-  /** Value shown in the result envelope: path, URL, or `-` for stdin. */
+  /** Value shown in the result: path, URL, browser filename, or `-` for stdin. */
   display: string;
 }
 

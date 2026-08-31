@@ -10,6 +10,7 @@ export interface SdkErrorContext {
    * find. Omitted in guest mode, where there is nothing to name.
    */
   credentialOrigin?: string;
+  runtime?: 'node' | 'browser';
 }
 
 /**
@@ -66,10 +67,13 @@ export function mapSdkError(
 
     if (status === 401) {
       return DeckRenderError.auth(`Authentication failed: ${error.message}`, {
-        hint: context.credentialOrigin
-          ? `Credentials in use: ${context.credentialOrigin}. Run \`deckrender auth login\` to replace them, ` +
-            'or remove them to render in guest mode.'
-          : 'Run `deckrender auth login`, or set DECKFLOW_API_KEY in the environment.',
+        hint:
+          context.runtime === 'browser'
+            ? 'Refresh the user token through your application and retry. Guest fallback is not automatic.'
+            : context.credentialOrigin
+              ? `Credentials in use: ${context.credentialOrigin}. Run \`deckrender auth login\` to replace them, ` +
+                'or remove them to render in guest mode.'
+              : 'Run `deckrender auth login`, or set DECKFLOW_API_KEY in the environment.',
         requestId,
         cause: error,
       });

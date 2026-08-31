@@ -6,6 +6,17 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+### Added
+
+- A cloud-only `@deckflow/deckrender/browser` entry with DOM-only declarations and
+  no Node polyfills: File/named binary/inline HTML and Markdown input, URL outputs,
+  lazy Blob download, and idempotent object-URL disposal for zero-upload PDF passthrough.
+- Explicit browser user-token or guest authentication; independent clients per
+  render and no automatic credential-to-guest fallback. Existing Node/CLI behavior is unchanged.
+- A checksum-guarded, browser-build-only compatibility bridge for the pinned
+  upstream SDK, isolated consumer packaging tests, and real-browser cross-origin
+  upload/multipart/SSE/preview/auth tests against a loopback fake cloud.
+
 ### Changed
 
 - Refresh all four bundled office2html binaries from the 2026-08-31 build.

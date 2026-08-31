@@ -35,6 +35,9 @@ try {
     main.files.some(({ path: file }) => file === 'dist/cli.js'),
     'Missing built CLI.'
   );
+  for (const browserFile of ['dist/browser/index.js', 'dist/browser/index.d.ts']) {
+    assert(main.files.some(({ path: file }) => file === browserFile), `Missing browser SDK artifact: ${browserFile}`);
+  }
   assert(
     main.files.every(({ path: file }) => !file.startsWith('packages/') && !file.includes('/bin/office2html')),
     'The main tarball must not bundle platform binaries.'

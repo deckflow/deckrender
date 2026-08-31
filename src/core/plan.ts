@@ -1,5 +1,5 @@
 import type { DeckTaskType } from '@deckops/sdk';
-import { DeckRenderError } from '../errors/index.js';
+import { DeckRenderError } from '../errors/DeckRenderError.js';
 import { findLocalRoute, localPlannedReason, localSupportedTargets } from '../engines/local/routes.js';
 import type {
   EnginePreference,

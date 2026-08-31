@@ -106,6 +106,17 @@ describe('normalizeTaskResult', () => {
 });
 
 describe('extensionOf', () => {
+  it.each([
+    ['/tmp/page.PNG', '.png'],
+    ['/tmp/page.png/', '.png'],
+    ['C:\\render.v1\\page.WEBP', '.webp'],
+    ['C:\\render.v1\\page', '.bin'],
+    ['C:\\render.v1\\.hidden', '.bin'],
+    ['https://cdn/page.PNG?signature=value#fragment', '.png'],
+  ])('supports URL, POSIX and Windows path boundaries: %s', (source, expected) => {
+    expect(extensionOf(source)).toBe(expected);
+  });
+
   it('ignores query strings on signed URLs', () => {
     expect(extensionOf('https://cdn/a/b/001.PNG?sig=abc&x=1')).toBe('.png');
   });

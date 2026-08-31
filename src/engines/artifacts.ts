@@ -1,4 +1,3 @@
-import path from 'node:path';
 import type { RenderArtifact } from '../types.js';
 
 /**
@@ -79,7 +78,13 @@ export function extensionOf(source: string): string {
   } catch {
     pathname = source.split('?')[0] ?? source;
   }
-  const ext = path.extname(pathname).toLowerCase();
+  const name =
+    pathname
+      .replace(/[\\/]+$/, '')
+      .split(/[\\/]/)
+      .pop() ?? '';
+  const dot = name.lastIndexOf('.');
+  const ext = dot > 0 && name !== '..' ? name.slice(dot).toLowerCase() : '';
   return ext || '.bin';
 }
 

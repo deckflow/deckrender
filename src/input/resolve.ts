@@ -3,6 +3,8 @@ import path from 'node:path';
 import { DeckRenderError } from '../errors/index.js';
 import { KNOWN_UNRENDERABLE_EXTENSIONS } from '../core/routes.js';
 import { SOURCE_FORMATS, type RenderInput, type SourceFormat } from '../types.js';
+import { withBaseHref } from './html.js';
+export { withBaseHref } from './html.js';
 
 /** Extensions that map onto a render matrix row. */
 const EXTENSION_MAP: Record<string, SourceFormat> = {
@@ -153,7 +155,7 @@ async function resolveFile(spec: string, options: ResolveInputOptions): Promise<
     };
   }
 
-  return { kind: 'file', format, path: absolute, display: spec };
+  return { kind: 'file', format, path: absolute, name: path.basename(absolute), display: spec };
 }
 
 function formatFromExtension(file: string): SourceFormat {
@@ -172,37 +174,6 @@ function formatFromExtension(file: string): SourceFormat {
   throw DeckRenderError.usage(ext ? `Unrecognized input extension: ${ext}` : 'Input has no file extension.', {
     hint: `Set the format explicitly with --from <${SOURCE_FORMATS.join('|')}>.`,
   });
-}
-
-/**
- * Give relative URLs something to resolve against.
- *
- * The document is detached from its origin once it travels inline, so without
- * a `<base>` every relative stylesheet and image would 404 during render.
- */
-export function withBaseHref(html: string, url: string): string {
-  if (/<base\s/i.test(html)) {
-    return html;
-  }
-
-  const baseTag = `<base href="${escapeAttribute(url)}">`;
-  const headOpen = /<head\b[^>]*>/i.exec(html);
-  if (headOpen) {
-    const at = headOpen.index + headOpen[0].length;
-    return `${html.slice(0, at)}${baseTag}${html.slice(at)}`;
-  }
-
-  const htmlOpen = /<html\b[^>]*>/i.exec(html);
-  if (htmlOpen) {
-    const at = htmlOpen.index + htmlOpen[0].length;
-    return `${html.slice(0, at)}<head>${baseTag}</head>${html.slice(at)}`;
-  }
-
-  return `${baseTag}${html}`;
-}
-
-function escapeAttribute(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 }
 
 async function readStdinBytes(): Promise<Uint8Array> {

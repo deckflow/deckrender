@@ -1,4 +1,3 @@
-import path from 'node:path';
 import pLimit from 'p-limit';
 import { isRetriableError, type DeckClient, type DeckTask, type DeckTaskType } from '@deckops/sdk';
 import { DeckRenderError, mapSdkError, type ErrorCode } from '../errors/index.js';
@@ -35,11 +34,13 @@ export interface CloudEngineOptions {
   timeout?: number;
   /** Parallel task count for per-frame steps. */
   concurrency?: number;
+  /** Browser errors must not suggest CLI login or environment variables. */
+  runtime?: 'node' | 'browser';
 }
 
 /** What flows between steps. */
 type Carrier =
-  | { kind: 'file'; path: string }
+  | { kind: 'file'; path: string; name: string }
   | { kind: 'bytes'; bytes: Uint8Array; name: string }
   | { kind: 'text'; text: string; field: 'html' | 'markdown' }
   | { kind: 'artifacts'; items: RenderArtifact[] };
@@ -57,6 +58,7 @@ export class CloudEngine implements RenderEngine {
   private readonly credentialOrigin: () => string | undefined;
   private readonly timeout: number;
   private readonly limit: ReturnType<typeof pLimit>;
+  private readonly runtime: 'node' | 'browser';
 
   constructor(options: CloudEngineOptions) {
     this.client = options.client;
@@ -64,11 +66,12 @@ export class CloudEngine implements RenderEngine {
     this.credentialOrigin = options.credentialOrigin ?? (() => undefined);
     this.timeout = options.timeout ?? DEFAULT_TIMEOUT_SECONDS;
     this.limit = pLimit(options.concurrency ?? DEFAULT_CONCURRENCY);
+    this.runtime = options.runtime ?? 'node';
   }
 
   /** `mapSdkError` with this engine's credential context attached. */
   private mapError(error: unknown, fallback?: ErrorCode): DeckRenderError {
-    return mapSdkError(error, fallback, { credentialOrigin: this.credentialOrigin() });
+    return mapSdkError(error, fallback, { credentialOrigin: this.credentialOrigin(), runtime: this.runtime });
   }
 
   supports(plan: RenderPlan): boolean {
@@ -131,7 +134,7 @@ export class CloudEngine implements RenderEngine {
     // task endpoint currently requires a file id and fails when both forms are
     // sent. Uploading one source file is the compatible cloud-only path.
     const source = await this.materialize(carrier, ctx);
-    report(ctx, { phase: 'upload', message: `Uploading ${path.basename(source.name)}`, task });
+    report(ctx, { phase: 'upload', message: `Uploading ${source.name}`, task });
     const uploaded = await this.upload(source, ctx);
     fileIds.push(uploaded);
 
@@ -208,14 +211,14 @@ export class CloudEngine implements RenderEngine {
       // `tasks.wait` rejects on a failed task rather than returning it, so the
       // task type and id have to be reattached here. Without this the user gets
       // a bare "Task failed: Unknown error" and nothing to investigate with.
-      throw enrichTaskFailure(this.mapError(error), type, taskId, error);
+      throw enrichTaskFailure(this.mapError(error), type, taskId, error, this.runtime);
     }
 
     // Defensive: the SDK throws today, but a future version returning the
     // failed task should not read as success.
     if (task.status !== 'completed') {
       throw DeckRenderError.render(`Task ${type} ${task.status}: ${task.error ?? 'no error detail'}`, {
-        hint: `Inspect the task with: deckops task get ${taskId}`,
+        hint: taskHint(taskId, this.runtime),
       });
     }
 
@@ -240,7 +243,7 @@ export class CloudEngine implements RenderEngine {
     ctx: ExecuteContext
   ): Promise<{ path: string; name: string } | { bytes: Uint8Array; name: string }> {
     if (carrier.kind === 'file') {
-      return { path: carrier.path, name: path.basename(carrier.path) };
+      return { path: carrier.path, name: carrier.name };
     }
 
     if (carrier.kind === 'bytes') {
@@ -288,7 +291,10 @@ export class CloudEngine implements RenderEngine {
     let lastError: unknown;
     for (let attempt = 1; attempt <= DOWNLOAD_ATTEMPTS; attempt += 1) {
       try {
-        const response = await fetch(source);
+        const response = await fetch(
+          source,
+          this.runtime === 'browser' ? { credentials: 'omit' } : undefined
+        );
         if (!response.ok) {
           throw new Error(`${response.status} ${response.statusText}`);
         }
@@ -318,7 +324,7 @@ function initialCarrier(ctx: ExecuteContext): Carrier {
     return { kind: 'bytes', bytes: input.bytes, name: input.name ?? `input.${input.format}` };
   }
   if (input.path) {
-    return { kind: 'file', path: input.path };
+    return { kind: 'file', path: input.path, name: input.name ?? `input.${input.format}` };
   }
   throw DeckRenderError.usage('Input has neither a file path nor inline content.');
 }
@@ -334,7 +340,8 @@ function enrichTaskFailure(
   mapped: DeckRenderError,
   type: DeckTaskType,
   taskId: string,
-  cause: unknown
+  cause: unknown,
+  runtime: 'node' | 'browser'
 ): DeckRenderError {
   if (mapped.code !== 'render_error') {
     return mapped;
@@ -342,7 +349,7 @@ function enrichTaskFailure(
 
   const detail = mapped.message.replace(/^Task failed:\s*/i, '');
   return DeckRenderError.render(`Task ${type} failed: ${detail}`, {
-    hint: `Inspect the task with: deckops task get ${taskId}`,
+    hint: taskHint(taskId, runtime),
     ...(mapped.requestId ? { requestId: mapped.requestId } : {}),
     cause,
   });
@@ -350,6 +357,10 @@ function enrichTaskFailure(
 
 function report(ctx: ExecuteContext, event: ProgressEvent): void {
   ctx.onProgress?.(event);
+}
+
+function taskHint(taskId: string, runtime: 'node' | 'browser'): string {
+  return runtime === 'browser' ? `Task ID: ${taskId}` : `Inspect the task with: deckops task get ${taskId}`;
 }
 
 function delay(ms: number): Promise<void> {

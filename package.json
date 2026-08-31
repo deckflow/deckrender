@@ -10,6 +10,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./browser": {
+      "types": "./dist/browser/index.d.ts",
+      "import": "./dist/browser/index.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {
@@ -21,8 +25,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup",
+    "build": "tsup && tsup --config tsup.browser.config.ts",
     "dev": "tsup --watch",
+    "dev:browser": "tsup --config tsup.browser.config.ts --watch",
     "test": "vitest run",
     "test:unit": "vitest run tests/unit",
     "test:integration": "vitest run tests/integration",
@@ -32,12 +37,14 @@
     "verify:office2html": "node scripts/verify-office2html.mjs",
     "test:packaging": "node scripts/verify-office2html-install.mjs",
     "test:consumer": "node node_modules/typescript-7/bin/tsc -p tests/consumer/tsconfig.json",
+    "test:browser": "node scripts/verify-browser.mjs",
+    "test:browser:e2e": "node scripts/run-browser-e2e.mjs",
     "test:conformance": "node scripts/conformance.mjs",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src tests --ext .ts",
     "format": "prettier --write 'src/**/*.ts' 'tests/**/*.ts'",
-    "typecheck": "node node_modules/typescript/bin/tsc --noEmit",
-    "check": "pnpm verify:office2html && pnpm typecheck && pnpm lint && pnpm test:unit && pnpm test:integration && pnpm build && pnpm test:consumer"
+    "typecheck": "node node_modules/typescript/bin/tsc --noEmit && node node_modules/typescript/bin/tsc -p tsconfig.browser.json --noEmit",
+    "check": "pnpm verify:office2html && pnpm typecheck && pnpm lint && pnpm test:unit && pnpm test:integration && pnpm build && pnpm test:consumer && pnpm test:browser"
   },
   "keywords": [
     "cli",

@@ -19,6 +19,7 @@ import { parsePageSelection } from './pages.js';
 import { buildPlan } from './plan.js';
 import { validateRenderOptions } from './validation.js';
 import { concreteEngineFor, resolveEnginePreference } from './engine-selection.js';
+import { renderArtifacts, safeCleanup } from './execute.js';
 
 export interface RendererOptions extends CredentialOverrides {
   /** Pre-built DeckOps client. Supplying one skips credential resolution. */
@@ -183,17 +184,13 @@ async function executePlan(
       : await createCloudEngine(options, rendererOptions);
 
   const { engine } = selection;
-  if (!engine.supports(plan)) {
-    throw DeckRenderError.render(`The ${engine.name} engine cannot execute this route.`);
-  }
-
   const context = {
     input,
     ...(options.onProgress ? { onProgress: options.onProgress } : {}),
   };
 
   try {
-    return await run(engine, plan, context);
+    return await renderArtifacts(engine, plan, context, validateEngineOutput);
   } catch (error) {
     const guest = credentialsRejected(error) ? selection.guestFallback?.() : undefined;
     if (!guest) {
@@ -204,35 +201,7 @@ async function executePlan(
         'in guest mode, which is rate-limited. Run `deckrender auth login` for full access, or ' +
         '`deckrender config list` to see where that credential came from.'
     );
-    return run(guest.engine, plan, context);
-  }
-}
-
-async function run(
-  engine: RenderEngine,
-  plan: ReturnType<typeof buildPlan>['plan'],
-  context: { input: Awaited<ReturnType<typeof resolveInput>>; onProgress?: RenderOptions['onProgress'] }
-): Promise<EngineOutput & { engine: string }> {
-  const rawOutput: unknown = await engine.execute(plan, context);
-  try {
-    const output = validateEngineOutput(engine.name, rawOutput);
-    return { ...output, engine: engine.name };
-  } catch (error) {
-    const cleanup =
-      rawOutput && typeof rawOutput === 'object' ? (rawOutput as { cleanup?: unknown }).cleanup : undefined;
-    if (typeof cleanup === 'function') {
-      await safeCleanup(cleanup as () => Promise<void> | void);
-    }
-    throw error;
-  }
-}
-
-async function safeCleanup(cleanup?: () => Promise<void> | void): Promise<void> {
-  try {
-    await cleanup?.();
-  } catch {
-    // Cleanup is best-effort and must never turn a completed render or a more
-    // useful validation error into a generic filesystem failure.
+    return renderArtifacts(guest.engine, plan, context, validateEngineOutput);
   }
 }
 

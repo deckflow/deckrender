@@ -38,6 +38,14 @@ See [engines.md](engines.md) for setup and privacy details.
 
 ## Next
 
+### Browser SDK (implemented, unreleased)
+
+- A separate cloud-only browser entry with File/binary/inline text input and URL/Blob output.
+- Shared planning and artifact execution; Node/CLI filesystem behavior stays compatible.
+- Explicit guest opt-in, user-token authentication, and DOM-only consumer tests.
+- Replace the temporary checksum-guarded upstream build bridge when DeckOps publishes a browser-safe export.
+- Production-origin CORS validation and live conversion checks remain deployment acceptance work.
+
 ### Local distribution and offline fidelity
 
 - Add `office2html --version` and machine-readable conversion output.
@@ -57,6 +65,7 @@ See [engines.md](engines.md) for setup and privacy details.
 | Ask | Unlocks |
 | --- | ------- |
 | Publish a resolvable `@deckops/sdk` successor to 0.7.3 | Remove the current dependency pin and tsconfig declaration workaround |
+| Publish a browser-safe SDK export with correct declarations | Remove the browser build compatibility bridge |
 | Publish `html.getByURL` | Runtime-DOM cloud URL capture |
 | Parameters for `convertor.ppt2video` | FPS, duration and transitions |
 | Resolution/format parameters for Keynote image output | Keynote sizing and JPEG |

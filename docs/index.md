@@ -20,6 +20,7 @@ Choose the Community/local engine for private on-machine rendering or the manage
 | [CLI reference](cli.md)           | Every command and flag                                    |
 | [Formats](formats.md)             | What converts to what, and which flags each route accepts |
 | [Engines](engines.md)             | Local/cloud selection, setup and privacy boundaries       |
+| [Browser SDK](browser.md)         | Cloud-only browser API, input, preview, authentication and CORS |
 | [Profiles](profiles.md)           | Named flag presets                                        |
 | [Configuration](configuration.md) | Credentials, shared auth, render defaults                 |
 | [Errors](errors.md)               | Error codes and exit codes                                |

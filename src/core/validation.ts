@@ -1,4 +1,4 @@
-import { DeckRenderError } from '../errors/index.js';
+import { DeckRenderError } from '../errors/DeckRenderError.js';
 import {
   ENGINE_PREFERENCES,
   IMAGE_FORMATS,
