@@ -31,14 +31,26 @@ Local image/PDF routes use:
 - PDF.js in the same browser for PDF→image;
 - `pdf-lib` for numeric-order PDF page merging.
 
-`playwright-core`, `pdfjs-dist`, `pdf-lib`, and the four repository-owned `office2html` platform packages are optional dependencies so cloud-only installations may use `--omit=optional`. Package managers install only the `office2html` package matching the current OS/CPU. Reinstall without `--omit=optional` before using local rendering.
+`playwright-core`, `pdfjs-dist`, `pdf-lib`, and the upstream `@deckflow/office2html-*` npm packages are optional dependencies. npm/pnpm use the platform packages' `os` / `cpu` metadata to install only the current platform's binary. An unsupported platform installs no official binary; cloud, browser, HTML, and PDF routes do not require `office2html`.
 
 ```bash
 # No office2html binary or other optional local dependencies:
 npm install -g --omit=optional @deckflow/deckrender
+
+# Enable local dependencies later, including only this machine's binary:
+npm install -g --include=optional @deckflow/deckrender
+
+# The equivalent lightweight installation with pnpm:
+pnpm add -g --no-optional @deckflow/deckrender
+# Enable local dependencies again:
+pnpm add -g @deckflow/deckrender
 ```
 
-The main npm tarball does not contain any platform binaries. Four package declarations do not mean four downloads: each platform package is guarded by `os` / `cpu`. The repository's pnpm workspace may link all four local directories for development; a registry installation downloads only its matching binary. See [platform packaging and release checks](../packages/README.md).
+With pnpm 9.15, a fresh `--no-optional` installation can still download the current platform tarball while resolving its lockfile, even though no platform package is installed. To guarantee no binary downloads, use npm's `--omit=optional`, or `pnpm install --frozen-lockfile --no-optional` in a project with an up-to-date lockfile. Both pnpm paths are covered by the installation test below.
+
+For an SDK project, omit `-g`. If you only need local HTML or PDF rendering, start with `--omit=optional` and explicitly add the required libraries (for example `npm install --omit=optional playwright-core@1.55.1` for HTML capture; add `pdfjs-dist@4.8.69` for PDF rasterization). This does not install `office2html`.
+
+The main npm tarball contains no platform binaries, and source checkouts use the same registry dependencies as consumers. No install hook or render operation runs an installer. Do not configure pnpm's `supportedArchitectures` for extra platforms unless a multi-platform installation is intentional.
 
 Chrome/Chromium resolution order:
 
@@ -57,15 +69,34 @@ Chrome/Chromium resolution order:
 ```text
 config office2html-path
 > DECKRENDER_OFFICE2HTML_PATH
-> bundled @deckflow/office2html-<platform> package
+> installed upstream @deckflow/office2html-<platform> package
 > PATH
 ```
 
-All four binary packages live under `packages/` in this open-source repository and are part of the same release. Their package manifests constrain `os` and `cpu`, while `scripts/verify-office2html.mjs` pins every artifact's size and SHA-256 digest. An explicit binary override remains available for enterprise mirrors or custom builds:
+The tested upstream version is pinned to `0.1.0`, independently of DeckRender's version. These upstream packages contain a root-level executable and do not declare an npm `bin` entry, so DeckRender resolves the file directly instead of relying on a `node_modules/.bin` shim. Legacy packages with a `bin` entry or `bin/` layout remain supported.
+
+| Platform | npm package | Executable inside package |
+| --- | --- | --- |
+| macOS arm64 | `@deckflow/office2html-darwin-arm64` | `office2html` |
+| macOS x64 | `@deckflow/office2html-darwin-x64` | `office2html` |
+| Linux x64 | `@deckflow/office2html-linux-x64` | `office2html` |
+| Windows x64 | `@deckflow/office2html-win32-x64` | `office2html.exe` |
+
+If optional dependencies were omitted, reinstall DeckRender with `--include=optional`, or explicitly install just the matching platform package in the SDK project, for example `npm install --omit=optional @deckflow/office2html-darwin-arm64@0.1.0`. Other local libraries must also be present for the chosen route. Installing a platform package globally does not create an `office2html` command because upstream does not declare `bin`; use a normal DeckRender install or configure the executable's absolute path.
+
+Explicit paths and `PATH` remain available for enterprise mirrors, offline installations, custom builds, or platforms without an official package:
 
 ```bash
 deckrender config set office2html-path /opt/deckflow/office2html
 ```
+
+Missing local dependencies produce an actionable error when the relevant route is used; DeckRender does not install them in the background or fall back to cloud.
+
+### Dependency and release checks
+
+`pnpm verify:office2html` validates the four pinned dependency declarations, their lockfile integrity/platform metadata, and the current platform package if installed. CI adds `--require-installed` so a failed optional download cannot silently pass. Versions and tarball integrity come from the upstream npm release and `pnpm-lock.yaml`, not repository-owned binary copies.
+
+`pnpm build && pnpm test:packaging` downloads the four pinned upstream tarballs for verification, checks their integrity, and uses an isolated loopback registry to test nine installation scenarios: npm's four platforms, unsupported platform, and optional omission, plus pnpm's native install and fresh/frozen optional omission. Those cross-platform downloads are a release test only; normal installs download just the current platform. The test also checks both npm and pnpm DeckRender tarballs contain no binaries or workspace references. It never publishes packages; the release workflow publishes only DeckRender. Set `KEEP_PACKAGING_ARTIFACTS=1` to retain the test's temporary files.
 
 ## office2html output contract
 

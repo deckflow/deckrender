@@ -14,7 +14,7 @@
 - Rejected credentials fall back to guest mode
 - Runtime validation for SDK inputs and custom engine output
 
-### v0.3 — Community/local engine
+### v0.3 — Community/local engine and browser SDK
 
 - Independent `local` and `cloud` route tables
 - `--engine local|cloud|auto`, config and environment selection
@@ -23,7 +23,10 @@
 - HTML/URL→image through Chromium
 - Numeric page-order guarantees and post-write temporary cleanup
 - Strict local PPTX/PDF boundary: no credential resolution, upload or silent cloud fallback
-- Repository-owned `office2html` packages for macOS arm64/x64, Linux x64 and Windows x64, installed by platform
+- Upstream npm `office2html` packages for macOS arm64/x64, Linux x64 and Windows x64, pinned independently and installed by platform; cloud-only installs can omit them
+- A separate cloud-only browser entry with File/binary/inline text input and URL/Blob output
+- Shared planning and artifact execution; Node/CLI filesystem behavior stays compatible
+- Explicit browser guest opt-in, user-token authentication, and DOM-only consumer tests
 
 ## Engine boundaries
 
@@ -38,11 +41,8 @@ See [engines.md](engines.md) for setup and privacy details.
 
 ## Next
 
-### Browser SDK (implemented, unreleased)
+### Browser SDK follow-ups
 
-- A separate cloud-only browser entry with File/binary/inline text input and URL/Blob output.
-- Shared planning and artifact execution; Node/CLI filesystem behavior stays compatible.
-- Explicit guest opt-in, user-token authentication, and DOM-only consumer tests.
 - Replace the temporary checksum-guarded upstream build bridge when DeckOps publishes a browser-safe export.
 - Production-origin CORS validation and live conversion checks remain deployment acceptance work.
 

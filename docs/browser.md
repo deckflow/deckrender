@@ -11,8 +11,13 @@ It is framework-independent: React, Vue, and other frameworks use the same API.
 
 ## Install and render
 
-This entry is implemented in the current source tree and is not yet published
-to npm. To try it from another project before release:
+The browser entry is available starting with DeckRender 0.3.0:
+
+```sh
+npm install --omit=optional @deckflow/deckrender@^0.3.0
+```
+
+To test a development checkout from another project:
 
 ```sh
 # In the DeckRender repository:
@@ -21,12 +26,6 @@ pnpm pack
 
 # In your frontend project, install the .tgz path printed by pnpm pack:
 npm install --omit=optional /absolute/path/to/generated-package.tgz
-```
-
-After a release containing this entry is published, use:
-
-```sh
-npm install --omit=optional @deckflow/deckrender
 ```
 
 Skipping optional dependencies avoids installing native local-rendering tools.

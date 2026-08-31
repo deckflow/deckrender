@@ -15,12 +15,14 @@ deckrender --version
 
 Requires Node.js 18 or newer. No credentials needed to start.
 
-The compatible default is cloud guest mode. For Community rendering on your machine, install/configure Chrome, then select local. The matching `office2html` platform package is installed automatically:
+The compatible default is cloud guest mode. For Community rendering on your machine, install/configure Chrome, then select local. The matching upstream `office2html` npm platform package is installed automatically as an optional dependency:
 
 ```bash
 deckrender config set engine local
 deckrender deck.pptx -o frames/
 ```
+
+For a smaller cloud-only install, use `npm install -g --omit=optional @deckflow/deckrender`. Enable local rendering later with `npm install -g --include=optional @deckflow/deckrender`; only the current OS/CPU binary is installed. No binaries are downloaded during rendering.
 
 See [engines.md](engines.md) for dependency resolution and privacy details.
 

@@ -6,8 +6,17 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-31
+
 ### Added
 
+- Community/local engine with independent PPTX→image/PDF, PDF→image/PDF and HTML/URL→image routes.
+- `--engine local|cloud|auto`, `DECKRENDER_ENGINE`, and persisted `engine` configuration. `auto` is local-first and warns before choosing cloud; explicit local never uploads or falls back.
+- Local PPTX conversion via `office2html`, strict Chromium capture, CJK-safe PDF printing, numeric page merge, and only-selected-page image capture.
+- Local PDF rasterization through PDF.js in Chromium, including packaged CMaps and standard fonts.
+- Chrome/Chromium and office2html executable resolution with environment/config escape hatches.
+- Four upstream `@deckflow/office2html-<platform>@0.1.0` optional dependencies for macOS arm64/x64, Linux x64, and Windows x64; only the matching platform is installed.
+- `deckrender formats --engine ...` and engine-aware JSON capability matrices.
 - A cloud-only `@deckflow/deckrender/browser` entry with DOM-only declarations and
   no Node polyfills: File/named binary/inline HTML and Markdown input, URL outputs,
   lazy Blob download, and idempotent object-URL disposal for zero-upload PDF passthrough.
@@ -19,7 +28,12 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ### Changed
 
-- Refresh all four bundled office2html binaries from the 2026-08-31 build.
+- `RenderOptions.engine` accepts built-in engine names. The existing custom-engine API remains compatible through `createRenderer({ engine })`; one-shot `render()` accepts either form, and `customEngine` is available as an unambiguous spelling.
+- Local dependencies are optional and kept external to the CLI bundle, so cloud-only installs may use `--omit=optional`.
+- Engine artifacts may provide a cleanup callback. The common renderer consumes local files first and then cleans them on success or failure.
+- Engine output validation sorts artifacts by numeric page and rejects duplicates, preventing the 1/10/2 filename-order trap.
+- Replace repository-owned office2html binaries and optional workspace packages with upstream `@deckflow/office2html-*` npm dependencies pinned to `0.1.0`. npm/pnpm install only the current OS/CPU package; cloud/browser-only users can omit optional dependencies.
+- Remove the four checked-in native binaries and their workspace/release packaging. DeckRender releases no longer republish upstream packages or couple their versions to DeckRender's version.
 - Render the new lazy-slides output directly from its validated, zero-based `slide-meta` manifest. PNG/JPEG and PDF use a bounded four-page worker pool while preserving public one-based page numbers and offline rendering.
 - Accept both the new `pages:` and legacy `Slides:` conversion summaries; retain legacy embedded-deck compatibility.
 
@@ -27,26 +41,9 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 - Prevent the one-based filename assumption in the capture reference from skipping the first slide of zero-based converter output.
 - Add real-tarball installation checks proving each supported OS/CPU downloads and installs only one office2html package; unsupported platforms and `--omit=optional` download none.
-- Publish platform packages before the main package in the release workflow so optional dependencies are available at install time.
-
-## [0.3.0] - 2026-08-25
-
-### Added
-
-- Community/local engine with independent PPTX→image/PDF, PDF→image/PDF and HTML/URL→image routes.
-- `--engine local|cloud|auto`, `DECKRENDER_ENGINE`, and persisted `engine` configuration. `auto` is local-first and warns before choosing cloud; explicit local never uploads or falls back.
-- Local PPTX conversion via `office2html`, strict Chromium capture, CJK-safe PDF printing, numeric page merge, and only-selected-page image capture.
-- Local PDF rasterization through PDF.js in Chromium, including packaged CMaps and standard fonts.
-- Chrome/Chromium and office2html executable resolution with environment/config escape hatches.
-- Four repository-owned `@deckflow/office2html-<platform>` optional packages (macOS arm64/x64, Linux x64, Windows x64), with platform metadata and artifact hash verification.
-- `deckrender formats --engine ...` and engine-aware JSON capability matrices.
-
-### Changed
-
-- `RenderOptions.engine` accepts built-in engine names. The existing custom-engine API remains compatible through `createRenderer({ engine })`; one-shot `render()` accepts either form, and `customEngine` is available as an unambiguous spelling.
-- Local dependencies are optional and kept external to the CLI bundle, so cloud-only installs may use `--omit=optional`.
-- Engine artifacts may provide a cleanup callback. The common renderer consumes local files first and then cleans them on success or failure.
-- Engine output validation sorts artifacts by numeric page and rejects duplicates, preventing the 1/10/2 filename-order trap.
+- Cover pnpm's native, fresh `--no-optional`, and frozen-lockfile installs separately; document that pnpm 9.15 can fetch the native tarball during fresh lockfile resolution without installing it.
+- Resolve upstream root-level `office2html` / `office2html.exe` executables without a `bin` manifest entry, retain legacy layouts, and allow explicit/PATH binaries on platforms without an official npm package.
+- Verify actual upstream npm tarballs and lockfile integrity during release tests, with missing optional dependencies reported only when needed at runtime. Rendering never automatically installs packages.
 
 ### Security
 
@@ -206,7 +203,8 @@ output and diffs the result against the documented matrix. Several conversions
 that looked plausible from the type definitions turned out not to work, so the
 matrix reflects measurement rather than inference.
 
-[Unreleased]: https://github.com/deckflow/deckrender/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/deckflow/deckrender/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/deckflow/deckrender/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/deckflow/deckrender/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/deckflow/deckrender/compare/v0.1.2...v0.2.0
 [0.1.2]: https://github.com/deckflow/deckrender/compare/v0.1.1...v0.1.2

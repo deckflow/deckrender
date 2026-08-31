@@ -2,15 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { concreteEngineFor, resolveEnginePreference } from '../../src/core/engine-selection.js';
 import { buildPlan, type SoftOption } from '../../src/core/plan.js';
 import { parseDeckViewport, imageDimensions } from '../../src/engines/local/capture.js';
-import { OFFICE2HTML_PATH_ENV, resolveOffice2htmlBinary } from '../../src/engines/local/binary.js';
 import type { DeckRenderError } from '../../src/errors/index.js';
-
-const bundledPackageDirectory: Record<string, string> = {
-  'darwin-arm64': 'office2html-darwin-arm64',
-  'darwin-x64': 'office2html-darwin-x64',
-  'linux-x64': 'office2html-linux-x64',
-  'win32-x64': 'office2html-win32-x64',
-};
 
 function codeOf(fn: () => unknown): string {
   try {
@@ -132,23 +124,6 @@ describe('engine selection', () => {
 });
 
 describe('local capture contracts', () => {
-  const packageDirectory = bundledPackageDirectory[`${process.platform}-${process.arch}`];
-  const bundledBinaryTest = packageDirectory ? it : it.skip;
-
-  bundledBinaryTest('resolves office2html from the repository platform package', async () => {
-    const previous = process.env[OFFICE2HTML_PATH_ENV];
-    delete process.env[OFFICE2HTML_PATH_ENV];
-    try {
-      const binary = await resolveOffice2htmlBinary();
-      expect(binary.split(String.fromCharCode(92)).join('/')).toContain(
-        `/packages/${packageDirectory}/bin/office2html`
-      );
-    } finally {
-      if (previous === undefined) delete process.env[OFFICE2HTML_PATH_ENV];
-      else process.env[OFFICE2HTML_PATH_ENV] = previous;
-    }
-  });
-
   it('reads office2html viewport and decimal aspect ratio', () => {
     const html = `<meta name="viewport" content="width=1920"><style>#deck { width:1920px; aspect-ratio:1.3333 }</style>`;
     expect(parseDeckViewport(html)).toEqual({ width: 1920, height: 1440 });

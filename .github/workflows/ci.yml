@@ -32,7 +32,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm verify:office2html
+      - run: pnpm verify:office2html --require-installed
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm exec prettier --check 'src/**/*.ts' 'tests/**/*.ts'

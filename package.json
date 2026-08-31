@@ -93,10 +93,10 @@
   },
   "packageManager": "pnpm@9.15.0",
   "optionalDependencies": {
-    "@deckflow/office2html-darwin-arm64": "workspace:*",
-    "@deckflow/office2html-darwin-x64": "workspace:*",
-    "@deckflow/office2html-linux-x64": "workspace:*",
-    "@deckflow/office2html-win32-x64": "workspace:*",
+    "@deckflow/office2html-darwin-arm64": "0.1.0",
+    "@deckflow/office2html-darwin-x64": "0.1.0",
+    "@deckflow/office2html-linux-x64": "0.1.0",
+    "@deckflow/office2html-win32-x64": "0.1.0",
     "pdf-lib": "1.17.1",
     "pdfjs-dist": "4.8.69",
     "playwright-core": "1.55.1"
