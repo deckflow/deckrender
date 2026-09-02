@@ -47,8 +47,8 @@ jobs:
       - run: pnpm test:e2e
       - run: pnpm test:packaging
 
-      # office2html platform packages are independently released upstream.
-      # test:packaging above verifies the exact registry versions we depend on;
+      # The office2html wrapper and its platform runtimes are released upstream.
+      # test:packaging above verifies the exact wrapper version we depend on;
       # this workflow publishes only DeckRender.
       # A version already on npm is not a failure: the tag may have been pushed
       # after a manual publish, or re-pushed to rerun the checks. Publishing is

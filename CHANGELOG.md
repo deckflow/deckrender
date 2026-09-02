@@ -6,6 +6,13 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-09-02
+
+### Changed
+
+- Replace the four direct platform-specific converter dependencies with the single optional `@deckflow/office2html@0.2.1` entry package. Platform selection and runtime package layout are now owned entirely by that package.
+- Resolve the native converter through `@deckflow/office2html`'s public `getBinaryPath()` API and simplify release checks to validate the wrapper contract plus native/cloud-only npm and pnpm installs.
+
 ## [0.3.0] - 2026-08-31
 
 ### Added
@@ -203,7 +210,8 @@ output and diffs the result against the documented matrix. Several conversions
 that looked plausible from the type definitions turned out not to work, so the
 matrix reflects measurement rather than inference.
 
-[Unreleased]: https://github.com/deckflow/deckrender/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/deckflow/deckrender/compare/v0.3.1...HEAD
+[0.3.1]: https://github.com/deckflow/deckrender/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/deckflow/deckrender/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/deckflow/deckrender/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/deckflow/deckrender/compare/v0.1.2...v0.2.0

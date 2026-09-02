@@ -31,7 +31,7 @@ Local image/PDF routes use:
 - PDF.js in the same browser for PDF→image;
 - `pdf-lib` for numeric-order PDF page merging.
 
-`playwright-core`, `pdfjs-dist`, `pdf-lib`, and the upstream `@deckflow/office2html-*` npm packages are optional dependencies. npm/pnpm use the platform packages' `os` / `cpu` metadata to install only the current platform's binary. An unsupported platform installs no official binary; cloud, browser, HTML, and PDF routes do not require `office2html`.
+`playwright-core`, `pdfjs-dist`, `pdf-lib`, and `@deckflow/office2html` are optional dependencies. DeckRender depends only on that converter entry package; it owns platform detection and installs the matching runtime through its optional dependencies. An unsupported platform installs no official binary; cloud, browser, HTML, and PDF routes do not require `office2html`.
 
 ```bash
 # No office2html binary or other optional local dependencies:
@@ -46,7 +46,7 @@ pnpm add -g --no-optional @deckflow/deckrender
 pnpm add -g @deckflow/deckrender
 ```
 
-With pnpm 9.15, a fresh `--no-optional` installation can still download the current platform tarball while resolving its lockfile, even though no platform package is installed. To guarantee no binary downloads, use npm's `--omit=optional`, or `pnpm install --frozen-lockfile --no-optional` in a project with an up-to-date lockfile. Both pnpm paths are covered by the installation test below.
+Both npm's `--omit=optional` and pnpm's `--no-optional` leave the converter entry package and its platform runtime uninstalled.
 
 For an SDK project, omit `-g`. If you only need local HTML or PDF rendering, start with `--omit=optional` and explicitly add the required libraries (for example `npm install --omit=optional playwright-core@1.55.1` for HTML capture; add `pdfjs-dist@4.8.69` for PDF rasterization). This does not install `office2html`.
 
@@ -69,20 +69,13 @@ Chrome/Chromium resolution order:
 ```text
 config office2html-path
 > DECKRENDER_OFFICE2HTML_PATH
-> installed upstream @deckflow/office2html-<platform> package
+> @deckflow/office2html getBinaryPath()
 > PATH
 ```
 
-The tested upstream version is pinned to `0.1.0`, independently of DeckRender's version. These upstream packages contain a root-level executable and do not declare an npm `bin` entry, so DeckRender resolves the file directly instead of relying on a `node_modules/.bin` shim. Legacy packages with a `bin` entry or `bin/` layout remain supported.
+The tested upstream entry package is pinned to `0.2.1`, independently of DeckRender's version. DeckRender calls its public `getBinaryPath()` API and does not know platform package names or binary layouts. The entry package also exposes the `office2html` CLI.
 
-| Platform | npm package | Executable inside package |
-| --- | --- | --- |
-| macOS arm64 | `@deckflow/office2html-darwin-arm64` | `office2html` |
-| macOS x64 | `@deckflow/office2html-darwin-x64` | `office2html` |
-| Linux x64 | `@deckflow/office2html-linux-x64` | `office2html` |
-| Windows x64 | `@deckflow/office2html-win32-x64` | `office2html.exe` |
-
-If optional dependencies were omitted, reinstall DeckRender with `--include=optional`, or explicitly install just the matching platform package in the SDK project, for example `npm install --omit=optional @deckflow/office2html-darwin-arm64@0.1.0`. Other local libraries must also be present for the chosen route. Installing a platform package globally does not create an `office2html` command because upstream does not declare `bin`; use a normal DeckRender install or configure the executable's absolute path.
+If optional dependencies were omitted, reinstall DeckRender with `--include=optional`, or explicitly add `@deckflow/office2html@0.2.1` to the SDK project. Other local libraries must also be present for the chosen route.
 
 Explicit paths and `PATH` remain available for enterprise mirrors, offline installations, custom builds, or platforms without an official package:
 
@@ -94,9 +87,9 @@ Missing local dependencies produce an actionable error when the relevant route i
 
 ### Dependency and release checks
 
-`pnpm verify:office2html` validates the four pinned dependency declarations, their lockfile integrity/platform metadata, and the current platform package if installed. CI adds `--require-installed` so a failed optional download cannot silently pass. Versions and tarball integrity come from the upstream npm release and `pnpm-lock.yaml`, not repository-owned binary copies.
+`pnpm verify:office2html` validates that DeckRender declares exactly one pinned converter entry package, checks its lockfile integrity, and exercises the installed package's public `getBinaryPath()` API. CI adds `--require-installed` so a failed optional runtime install cannot silently pass. Versions and tarball integrity come from the upstream npm release and `pnpm-lock.yaml`, not repository-owned binary copies.
 
-`pnpm build && pnpm test:packaging` downloads the four pinned upstream tarballs for verification, checks their integrity, and uses an isolated loopback registry to test nine installation scenarios: npm's four platforms, unsupported platform, and optional omission, plus pnpm's native install and fresh/frozen optional omission. Those cross-platform downloads are a release test only; normal installs download just the current platform. The test also checks both npm and pnpm DeckRender tarballs contain no binaries or workspace references. It never publishes packages; the release workflow publishes only DeckRender. Set `KEEP_PACKAGING_ARTIFACTS=1` to retain the test's temporary files.
+`pnpm build && pnpm test:packaging` verifies the published wrapper tarball and its public API/CLI contract, then tests native and cloud-only DeckRender installs with npm and pnpm. Platform-routing correctness belongs to `@deckflow/office2html`; DeckRender's release test deliberately does not duplicate that package's platform table. It also checks both DeckRender tarballs contain no binaries, direct platform-package dependencies, or workspace references. It never publishes packages; the release workflow publishes only DeckRender. Set `KEEP_PACKAGING_ARTIFACTS=1` to retain the test's temporary files.
 
 ## office2html output contract
 

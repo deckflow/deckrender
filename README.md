@@ -37,11 +37,11 @@ npm install -g @deckflow/deckrender
 
 Requires Node.js 18 or newer.
 
-For Community/local rendering, install Chrome or Chromium. The matching upstream `@deckflow/office2html-<platform>@0.1.0` npm package is installed automatically as an optional dependency. DeckRender does not bundle or republish its binaries. See [Local engine setup](docs/engines.md#local-engine-setup).
+For Community/local rendering, install Chrome or Chromium. DeckRender has one optional converter dependency, `@deckflow/office2html@0.2.1`; that package installs the matching platform runtime. DeckRender does not maintain the platform mapping or bundle/republish the binaries. See [Local engine setup](docs/engines.md#local-engine-setup).
 
-Only the current OS/CPU binary is downloaded, not all four platforms. Cloud-only and browser-only users can skip optional local dependencies with `npm install --omit=optional @deckflow/deckrender` (add `-g` for the CLI). To enable local rendering later, reinstall with `npm install --include=optional @deckflow/deckrender`. pnpm users can omit local dependencies with `pnpm add --no-optional @deckflow/deckrender`.
+Only the current OS/CPU binary is installed, as selected by `@deckflow/office2html`. Cloud-only and browser-only users can skip optional local dependencies with `npm install --omit=optional @deckflow/deckrender` (add `-g` for the CLI). To enable local rendering later, reinstall with `npm install --include=optional @deckflow/deckrender`. pnpm users can omit local dependencies with `pnpm add --no-optional @deckflow/deckrender`.
 
-For zero binary downloads, use npm's `--omit=optional`, or `pnpm install --frozen-lockfile --no-optional` with an up-to-date lockfile. pnpm 9.15 may download the native tarball while resolving a fresh lockfile even with `--no-optional`, although it does not install it.
+For cloud-only installs, npm's `--omit=optional` and pnpm's `--no-optional` leave the converter entry package and its platform runtime uninstalled.
 
 `office2html` is resolved only for local PPTX conversion; cloud, browser, HTML, and PDF routes do not need it. Rendering never runs a package installer or downloads a missing binary automatically.
 

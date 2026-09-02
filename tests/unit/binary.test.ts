@@ -2,27 +2,24 @@ import path from 'node:path';
 import { constants as fsConstants } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { OFFICE2HTML_PATH_ENV, resolveOffice2htmlBinary } from '../../src/engines/local/binary.js';
-import packageManifest from '../../package.json';
 
-const { resolveManifest, stat, access, readFile } = vi.hoisted(() => ({
-  resolveManifest: vi.fn(),
+const { packageRequire, stat, access } = vi.hoisted(() => ({
+  packageRequire: vi.fn(),
   stat: vi.fn(),
   access: vi.fn(),
-  readFile: vi.fn(),
 }));
 
 vi.mock('node:module', () => ({
-  createRequire: () => ({ resolve: resolveManifest }),
+  createRequire: () => packageRequire,
 }));
 
 vi.mock('node:fs/promises', () => ({
-  default: { stat, access, readFile },
+  default: { stat, access },
 }));
 
 const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform')!;
 const originalArch = Object.getOwnPropertyDescriptor(process, 'arch')!;
 const packageDirectory = path.resolve('virtual-node-modules/office2html');
-const manifestPath = path.join(packageDirectory, 'package.json');
 const pathDirectory = path.resolve('virtual-path');
 const executables = new Set<string>();
 const nonExecutableFiles = new Set<string>();
@@ -42,10 +39,9 @@ beforeEach(() => {
   executables.clear();
   nonExecutableFiles.clear();
   directories.clear();
-  resolveManifest.mockImplementation(() => {
+  packageRequire.mockImplementation(() => {
     throw new Error('MODULE_NOT_FOUND');
   });
-  readFile.mockResolvedValue('{}');
   stat.mockImplementation(async (candidate: string) => {
     if (executables.has(candidate) || nonExecutableFiles.has(candidate)) {
       return { isFile: () => true };
@@ -66,69 +62,26 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe('office2html platform packages', () => {
-  it.each([
-    ['darwin', 'arm64', 'office2html'],
-    ['darwin', 'x64', 'office2html'],
-    ['linux', 'x64', 'office2html'],
-    ['win32', 'x64', 'office2html.exe'],
-  ] as const)('resolves the upstream root executable on %s-%s', async (platform, arch, name) => {
-    usePlatform(platform, arch);
-    resolveManifest.mockReturnValue(manifestPath);
-    const executable = path.join(packageDirectory, name);
+describe('@deckflow/office2html package', () => {
+  it('resolves the binary through the package public API', async () => {
+    const executable = path.join(packageDirectory, 'office2html');
+    packageRequire.mockReturnValue({ getBinaryPath: () => executable });
     executables.add(executable);
 
     await expect(resolveOffice2htmlBinary()).resolves.toBe(executable);
-    expect(resolveManifest).toHaveBeenCalledTimes(1);
-    expect(resolveManifest).toHaveBeenCalledWith(`@deckflow/office2html-${platform}-${arch}/package.json`);
-    expect(readFile).not.toHaveBeenCalled();
-    if (platform === 'win32') expect(access).not.toHaveBeenCalled();
-    else expect(access).toHaveBeenCalledWith(executable, fsConstants.X_OK);
+    expect(packageRequire).toHaveBeenCalledOnce();
+    expect(packageRequire).toHaveBeenCalledWith('@deckflow/office2html');
+    expect(access).toHaveBeenCalledWith(executable, fsConstants.X_OK);
   });
 
-  it('prefers the upstream root executable over a legacy manifest or PATH', async () => {
-    resolveManifest.mockReturnValue(manifestPath);
-    readFile.mockResolvedValue('{"bin":"custom/office2html"}');
-    const root = path.join(packageDirectory, 'office2html');
-    executables.add(root);
-    executables.add(path.join(packageDirectory, 'custom/office2html'));
-    executables.add(path.join(pathDirectory, 'office2html'));
-
-    await expect(resolveOffice2htmlBinary()).resolves.toBe(root);
-    expect(readFile).not.toHaveBeenCalled();
-  });
-
-  it.each([{ bin: 'custom/office2html' }, { bin: { office2html: 'custom/office2html' } }])(
-    'supports the legacy manifest bin field %j',
-    async (manifest) => {
-      resolveManifest.mockReturnValue(manifestPath);
-      readFile.mockResolvedValue(JSON.stringify(manifest));
-      const executable = path.join(packageDirectory, 'custom/office2html');
-      executables.add(executable);
-
-      await expect(resolveOffice2htmlBinary()).resolves.toBe(executable);
-    }
-  );
-
-  it.each(['{}', '{"bin":"missing"}', '{"bin":{"office2html":3}}', 'null', '{'])(
-    'supports the legacy bin directory with manifest %s',
-    async (manifest) => {
-      resolveManifest.mockReturnValue(manifestPath);
-      readFile.mockResolvedValue(manifest);
-      const executable = path.join(packageDirectory, 'bin/office2html');
-      executables.add(executable);
-
-      await expect(resolveOffice2htmlBinary()).resolves.toBe(executable);
-    }
-  );
-
-  it('uses the Windows executable suffix in the legacy bin directory', async () => {
+  it('accepts the package binary on Windows without a POSIX execute permission bit', async () => {
     usePlatform('win32', 'x64');
-    resolveManifest.mockReturnValue(manifestPath);
-    const executable = path.join(packageDirectory, 'bin/office2html.exe');
-    executables.add(executable);
+    const executable = path.join(packageDirectory, 'office2html.exe');
+    packageRequire.mockReturnValue({ getBinaryPath: () => executable });
+    nonExecutableFiles.add(executable);
 
     await expect(resolveOffice2htmlBinary()).resolves.toBe(executable);
+    expect(access).not.toHaveBeenCalled();
   });
 
   it('falls back to PATH when the optional package is absent', async () => {
@@ -138,30 +91,45 @@ describe('office2html platform packages', () => {
     await expect(resolveOffice2htmlBinary()).resolves.toBe(executable);
   });
 
-  it('falls back to PATH when the package binary is missing or lacks execute permission', async () => {
-    resolveManifest.mockReturnValue(manifestPath);
-    nonExecutableFiles.add(path.join(packageDirectory, 'office2html'));
+  it.each(['missing API', 'throwing API', 'missing binary', 'non-executable binary'])(
+    'falls back to PATH for a package with a %s',
+    async (kind) => {
+      const packaged = path.join(packageDirectory, 'office2html');
+      if (kind === 'missing API') packageRequire.mockReturnValue({});
+      if (kind === 'throwing API') {
+        packageRequire.mockReturnValue({
+          getBinaryPath: () => {
+            throw new Error('unsupported platform');
+          },
+        });
+      }
+      if (kind === 'missing binary') {
+        packageRequire.mockReturnValue({ getBinaryPath: () => packaged });
+      }
+      if (kind === 'non-executable binary') {
+        packageRequire.mockReturnValue({ getBinaryPath: () => packaged });
+        nonExecutableFiles.add(packaged);
+      }
+      const executable = path.join(pathDirectory, 'office2html');
+      executables.add(executable);
+
+      await expect(resolveOffice2htmlBinary()).resolves.toBe(executable);
+    }
+  );
+
+  it('falls back to PATH when the package returns an invalid binary path', async () => {
+    packageRequire.mockReturnValue({ getBinaryPath: () => undefined });
     const executable = path.join(pathDirectory, 'office2html');
     executables.add(executable);
 
     await expect(resolveOffice2htmlBinary()).resolves.toBe(executable);
   });
 
-  it.each([
-    ['darwin', 'arm64'],
-    ['darwin', 'x64'],
-    ['linux', 'x64'],
-    ['win32', 'x64'],
-  ] as const)('gives platform-specific installation guidance on %s-%s', async (platform, arch) => {
-    usePlatform(platform, arch);
-    const packageName =
-      `@deckflow/office2html-${platform}-${arch}` as keyof typeof packageManifest.optionalDependencies;
-    const version = packageManifest.optionalDependencies[packageName];
-
+  it('gives entry-package installation guidance when no binary is available', async () => {
     await expect(resolveOffice2htmlBinary()).rejects.toMatchObject({
       code: 'render_error',
       message: expect.stringContaining('office2html is required for local PPTX rendering'),
-      hint: expect.stringContaining(`npm install --omit=optional ${packageName}@${version}`),
+      hint: expect.stringContaining('@deckflow/office2html'),
     });
     await expect(resolveOffice2htmlBinary()).rejects.toMatchObject({
       hint: expect.stringContaining('npm install --include=optional'),
@@ -179,7 +147,7 @@ describe('office2html custom executables', () => {
     executables.add(path.join(pathDirectory, 'office2html'));
 
     await expect(resolveOffice2htmlBinary(explicit)).resolves.toBe(explicit);
-    expect(resolveManifest).not.toHaveBeenCalled();
+    expect(packageRequire).not.toHaveBeenCalled();
     expect(stat).toHaveBeenCalledTimes(1);
     expect(stat).toHaveBeenCalledWith(explicit);
   });
@@ -191,7 +159,7 @@ describe('office2html custom executables', () => {
     executables.add(path.join(pathDirectory, 'office2html'));
 
     await expect(resolveOffice2htmlBinary()).resolves.toBe(executable);
-    expect(resolveManifest).not.toHaveBeenCalled();
+    expect(packageRequire).not.toHaveBeenCalled();
   });
 
   it('resolves a relative explicit path to an absolute path', async () => {
@@ -214,7 +182,7 @@ describe('office2html custom executables', () => {
         code: 'render_error',
         message: expect.stringContaining('executable is missing or not executable'),
       });
-      expect(resolveManifest).not.toHaveBeenCalled();
+      expect(packageRequire).not.toHaveBeenCalled();
     }
   );
 
@@ -223,7 +191,7 @@ describe('office2html custom executables', () => {
     executables.add(path.join(pathDirectory, 'office2html'));
 
     await expect(resolveOffice2htmlBinary()).rejects.toMatchObject({ code: 'render_error' });
-    expect(resolveManifest).not.toHaveBeenCalled();
+    expect(packageRequire).not.toHaveBeenCalled();
   });
 
   it('ignores an empty environment variable', async () => {
@@ -244,7 +212,7 @@ describe('office2html custom executables', () => {
   });
 
   it.each(['explicit', 'environment', 'PATH'])(
-    'allows a custom binary via %s on an architecture without a prebuilt package',
+    'allows a custom binary via %s when the entry package has no runtime',
     async (source) => {
       usePlatform('linux', 'arm64');
       const executable = path.join(pathDirectory, 'office2html');
@@ -254,7 +222,8 @@ describe('office2html custom executables', () => {
       await expect(resolveOffice2htmlBinary(source === 'explicit' ? executable : undefined)).resolves.toBe(
         executable
       );
-      expect(resolveManifest).not.toHaveBeenCalled();
+      if (source === 'PATH') expect(packageRequire).toHaveBeenCalledOnce();
+      else expect(packageRequire).not.toHaveBeenCalled();
     }
   );
 
@@ -264,18 +233,18 @@ describe('office2html custom executables', () => {
     executables.add(executable);
 
     await expect(resolveOffice2htmlBinary()).resolves.toBe(executable);
-    expect(resolveManifest).not.toHaveBeenCalled();
+    expect(packageRequire).toHaveBeenCalledOnce();
   });
 
-  it('explains the custom binary option when the platform has no prebuilt package', async () => {
+  it('explains the custom binary option when the entry package has no runtime', async () => {
     usePlatform('linux', 'arm64');
 
     await expect(resolveOffice2htmlBinary()).rejects.toMatchObject({
       code: 'render_error',
-      message: 'No prebuilt office2html package is available for linux-arm64.',
+      message: 'office2html is required for local PPTX rendering but was not found.',
       hint: expect.stringContaining(OFFICE2HTML_PATH_ENV),
     });
-    expect(resolveManifest).not.toHaveBeenCalled();
+    expect(packageRequire).toHaveBeenCalledOnce();
   });
 
   it('walks PATH in order, skipping directories and non-executable files', async () => {

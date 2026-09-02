@@ -23,7 +23,7 @@
 - HTML/URL→image through Chromium
 - Numeric page-order guarantees and post-write temporary cleanup
 - Strict local PPTX/PDF boundary: no credential resolution, upload or silent cloud fallback
-- Upstream npm `office2html` packages for macOS arm64/x64, Linux x64 and Windows x64, pinned independently and installed by platform; cloud-only installs can omit them
+- One pinned upstream `@deckflow/office2html` dependency that owns platform-runtime selection; cloud-only installs can omit it
 - A separate cloud-only browser entry with File/binary/inline text input and URL/Blob output
 - Shared planning and artifact execution; Node/CLI filesystem behavior stays compatible
 - Explicit browser guest opt-in, user-token authentication, and DOM-only consumer tests

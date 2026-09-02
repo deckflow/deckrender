@@ -1,49 +1,56 @@
 #!/usr/bin/env node
-/** Offline validation. --require-installed additionally requires the native optional runtime. */
+/** Offline validation. --require-installed additionally requires a usable native runtime. */
 import assert from 'node:assert/strict';
 import { constants as fsConstants } from 'node:fs';
 import fs from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { readOffice2htmlPackages, verifyOffice2htmlManifest } from './office2html-packages.mjs';
+import { readOffice2htmlPackage, verifyOffice2htmlManifest } from './office2html-packages.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const require = createRequire(path.join(root, 'package.json'));
+const packageRequire = createRequire(path.join(root, 'package.json'));
 const args = process.argv.slice(2);
 assert(
   args.every((arg) => arg === '--require-installed'),
   'Usage: verify-office2html.mjs [--require-installed]'
 );
-const { targets } = await readOffice2htmlPackages(root);
-console.log(
-  `Verified ${targets.length} pinned upstream office2html dependencies and lockfile integrity entries.`
-);
+const required = args.includes('--require-installed');
+const { target } = await readOffice2htmlPackage(root);
+console.log(`Verified the single pinned ${target.name}@${target.version} lockfile dependency.`);
 
-const target = targets.find(({ os, cpu }) => os === process.platform && cpu === process.arch);
-if (!target) {
-  assert(
-    !args.includes('--require-installed'),
-    `No upstream office2html package for ${process.platform}-${process.arch}.`
-  );
-  console.log(`No office2html package is required on unsupported ${process.platform}-${process.arch}.`);
-} else {
-  let manifestPath;
+let entryPath;
+try {
+  entryPath = packageRequire.resolve(target.name);
+} catch (error) {
+  if (error?.code !== 'MODULE_NOT_FOUND') throw error;
+  unavailable(`${target.name} is not installed (valid for cloud-only installs).`);
+}
+
+if (entryPath) {
+  const manifest = JSON.parse(await fs.readFile(path.join(path.dirname(entryPath), 'package.json'), 'utf8'));
+  verifyOffice2htmlManifest(manifest, target);
+
+  let runtime;
   try {
-    manifestPath = require.resolve(`${target.name}/package.json`);
+    runtime = packageRequire(target.name);
   } catch (error) {
-    if (error.code !== 'MODULE_NOT_FOUND') throw error;
-    const hint = `${target.name} is not installed (valid for cloud-only installs). Run pnpm install, or npm install --include=optional, for local PPTX rendering.`;
-    assert(!args.includes('--require-installed'), hint);
-    console.log(hint);
+    const detail = error instanceof Error ? error.message : String(error);
+    unavailable(`${target.name} has no runtime for ${process.platform}-${process.arch}: ${detail}`);
   }
-  if (manifestPath) {
-    const manifest = JSON.parse(await fs.readFile(manifestPath, 'utf8'));
-    verifyOffice2htmlManifest(manifest, target);
-    const binaryPath = path.join(path.dirname(manifestPath), target.binary);
+  if (runtime) {
+    assert.equal(typeof runtime.getBinaryPath, 'function', `${target.name} must export getBinaryPath().`);
+    const binaryPath = runtime.getBinaryPath();
+    assert.equal(typeof binaryPath, 'string', `${target.name}.getBinaryPath() must return a path.`);
     const stat = await fs.stat(binaryPath);
     assert(stat.isFile() && stat.size > 0, `Missing upstream executable: ${binaryPath}`);
     if (process.platform !== 'win32') await fs.access(binaryPath, fsConstants.X_OK);
-    console.log(`Verified native upstream runtime: ${target.name}@${target.version}/${target.binary}.`);
+    console.log(`Verified ${target.name}@${target.version} getBinaryPath(): ${binaryPath}`);
   }
+}
+
+function unavailable(message) {
+  const hint = `${message} Install with optional dependencies enabled for local PPTX rendering.`;
+  assert(!required, hint);
+  console.log(hint);
 }

@@ -33,18 +33,9 @@ importers:
         specifier: ^3.22.0
         version: 3.25.76
     optionalDependencies:
-      '@deckflow/office2html-darwin-arm64':
-        specifier: 0.1.0
-        version: 0.1.0
-      '@deckflow/office2html-darwin-x64':
-        specifier: 0.1.0
-        version: 0.1.0
-      '@deckflow/office2html-linux-x64':
-        specifier: 0.1.0
-        version: 0.1.0
-      '@deckflow/office2html-win32-x64':
-        specifier: 0.1.0
-        version: 0.1.0
+      '@deckflow/office2html':
+        specifier: 0.2.1
+        version: 0.2.1
       pdf-lib:
         specifier: 1.17.1
         version: 1.17.1
@@ -109,25 +100,29 @@ packages:
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
 
-  '@deckflow/office2html-darwin-arm64@0.1.0':
-    resolution: {integrity: sha512-zaUTII4xhwYoM4tFzceBvk2mdsQl327a6NmYbh9rlRkVZmFg0edtm6wpLd2XGNP9s1SedRqafsi/K+uV6deUow==}
+  '@deckflow/office2html-darwin-arm64@0.2.1':
+    resolution: {integrity: sha512-tg1ipuCRpbnuiaAScsmJUg6bggzHxaG/tBOlad/9ShtqvhGgLnahQ88HfokB7p6YfJu9gpRX0e3S0zQpaENplg==}
     cpu: [arm64]
     os: [darwin]
 
-  '@deckflow/office2html-darwin-x64@0.1.0':
-    resolution: {integrity: sha512-m/ijMhi1CwZ54zazq6zbylV7qELWqwGi2eSnm6wmXp6SUr0BPBI9CalQ8G3+rPUD3rM/M381uaaWWLyk4sb5xw==}
+  '@deckflow/office2html-darwin-x64@0.2.1':
+    resolution: {integrity: sha512-vIdUdq+/qXGIel5FROa5M/JTSjaGuo+9xTuMRzBJNIuuEOd2P6j8BsKVXcd9JgKO+z+a5Hzo4gxOGX0jplcD/g==}
     cpu: [x64]
     os: [darwin]
 
-  '@deckflow/office2html-linux-x64@0.1.0':
-    resolution: {integrity: sha512-kH4tRkuJ2+woZL2+UHJVgEbipjyMdT1o61Tk6R3oEqcvP8kSLYOZYwn4AtUOSDnBmV5YV5pq06ebgiwwXDGzpw==}
+  '@deckflow/office2html-linux-x64@0.2.1':
+    resolution: {integrity: sha512-KYuQxaqYakQVtfUYLixPKUhGDiVYIxaonjmYw6fKpUycq4Sp44KxSAvp5Kt4eXH1nVy9oqoJ+dB4lP+lmw3UaQ==}
     cpu: [x64]
     os: [linux]
 
-  '@deckflow/office2html-win32-x64@0.1.0':
-    resolution: {integrity: sha512-YCwfwloVxLolRW5mK/ja9vcOLsJyXty3PeJU3ait8ainZ7Y/8n4CFcpjX3T+iGrexpH19uviRcW3uLsHgzJKuw==}
+  '@deckflow/office2html-win32-x64@0.2.1':
+    resolution: {integrity: sha512-zjEUqN4ueRKP494K0iEDzV38ZdciYJZimCn7fpf0DBvsJP0i2jeIa1q2TPSCsKIeX6pjEdbcvlhAkrM13I97GA==}
     cpu: [x64]
     os: [win32]
+
+  '@deckflow/office2html@0.2.1':
+    resolution: {integrity: sha512-jMYzTIpmuzs7rf46ACx1Ew4AoqP3bYuEF5oLuUjRHz6HGrAH+YGzb7ZfMERUbDJpVEOYrCSuU/rR6IUGqTg9pA==}
+    hasBin: true
 
   '@deckops/sdk@0.7.3':
     resolution: {integrity: sha512-RBnsj/ynwz8PzMaPiPXEUKYdAvYD4FlcNr8ZggIJbmXYzVLWnqNPad6vaz6DExZus6VmykpxXL7ZdNRKxRVjpw==}
@@ -2085,16 +2080,24 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
-  '@deckflow/office2html-darwin-arm64@0.1.0':
+  '@deckflow/office2html-darwin-arm64@0.2.1':
     optional: true
 
-  '@deckflow/office2html-darwin-x64@0.1.0':
+  '@deckflow/office2html-darwin-x64@0.2.1':
     optional: true
 
-  '@deckflow/office2html-linux-x64@0.1.0':
+  '@deckflow/office2html-linux-x64@0.2.1':
     optional: true
 
-  '@deckflow/office2html-win32-x64@0.1.0':
+  '@deckflow/office2html-win32-x64@0.2.1':
+    optional: true
+
+  '@deckflow/office2html@0.2.1':
+    optionalDependencies:
+      '@deckflow/office2html-darwin-arm64': 0.2.1
+      '@deckflow/office2html-darwin-x64': 0.2.1
+      '@deckflow/office2html-linux-x64': 0.2.1
+      '@deckflow/office2html-win32-x64': 0.2.1
     optional: true
 
   '@deckops/sdk@0.7.3':
