@@ -14,14 +14,15 @@ Choose the Community/local engine for private on-machine rendering or the manage
 
 ## Documentation
 
-|                                   |                                                           |
-| --------------------------------- | --------------------------------------------------------- |
-| [Quick start](quickstart.md)      | Install and first render                                  |
-| [CLI reference](cli.md)           | Every command and flag                                    |
-| [Formats](formats.md)             | What converts to what, and which flags each route accepts |
-| [Engines](engines.md)             | Local/cloud selection, setup and privacy boundaries       |
-| [Browser SDK](browser.md)         | Cloud-only browser API, input, preview, authentication and CORS |
-| [Profiles](profiles.md)           | Named flag presets                                        |
-| [Configuration](configuration.md) | Credentials, shared auth, render defaults                 |
-| [Errors](errors.md)               | Error codes and exit codes                                |
-| [Roadmap](roadmap.md)             | What is coming, and what is blocked upstream              |
+|                                               |                                                                 |
+| --------------------------------------------- | --------------------------------------------------------------- |
+| [Quick start](quickstart.md)                  | Install and first render                                        |
+| [CLI reference](cli.md)                       | Every command and flag                                          |
+| [Formats](formats.md)                         | What converts to what, and which flags each route accepts       |
+| [Engines](engines.md)                         | Local/cloud selection, setup and privacy boundaries             |
+| [Browser SDK](browser.md)                     | Cloud-only browser API, input, preview, authentication and CORS |
+| [前端接入指南](frontend-integration.zh-CN.md) | Browser SDK 中文对接、格式矩阵、预览下载和验收清单              |
+| [Profiles](profiles.md)                       | Named flag presets                                              |
+| [Configuration](configuration.md)             | Credentials, shared auth, render defaults                       |
+| [Errors](errors.md)                           | Error codes and exit codes                                      |
+| [Roadmap](roadmap.md)                         | What is coming, and what is blocked upstream                    |

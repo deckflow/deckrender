@@ -201,17 +201,18 @@ API key. See [Browser SDK](docs/browser.md) for authentication, CORS, and lifecy
 
 ## Documentation
 
-|                                        |                                                         |
-| -------------------------------------- | ------------------------------------------------------- |
-| [Quick start](docs/quickstart.md)      | Install and first render                                |
-| [CLI reference](docs/cli.md)           | Every command and flag                                  |
-| [Formats](docs/formats.md)             | What converts to what, and the flags each route accepts |
-| [Profiles](docs/profiles.md)           | Named flag presets                                      |
-| [Configuration](docs/configuration.md) | Credentials, shared auth, render defaults               |
-| [Errors](docs/errors.md)               | Error codes and exit codes                              |
-| [Roadmap](docs/roadmap.md)             | What is coming and what is blocked upstream             |
-| [Engines](docs/engines.md)             | Local/cloud selection, setup, privacy and fidelity       |
-| [Browser SDK](docs/browser.md)        | Cloud-only browser entry, inputs, previews, auth and CORS |
+|                                                    |                                                           |
+| -------------------------------------------------- | --------------------------------------------------------- |
+| [Quick start](docs/quickstart.md)                  | Install and first render                                  |
+| [CLI reference](docs/cli.md)                       | Every command and flag                                    |
+| [Formats](docs/formats.md)                         | What converts to what, and the flags each route accepts   |
+| [Profiles](docs/profiles.md)                       | Named flag presets                                        |
+| [Configuration](docs/configuration.md)             | Credentials, shared auth, render defaults                 |
+| [Errors](docs/errors.md)                           | Error codes and exit codes                                |
+| [Roadmap](docs/roadmap.md)                         | What is coming and what is blocked upstream               |
+| [Engines](docs/engines.md)                         | Local/cloud selection, setup, privacy and fidelity        |
+| [Browser SDK](docs/browser.md)                     | Cloud-only browser entry, inputs, previews, auth and CORS |
+| [前端接入指南](docs/frontend-integration.zh-CN.md) | Browser SDK 中文对接、格式矩阵、预览下载和验收清单        |
 
 ## How it works
 
@@ -267,4 +268,9 @@ breaking change; note it in `CHANGELOG.md`.
 
 ## License
 
-MIT © DeckFlow
+Licensed under the [Apache License, Version 2.0](LICENSE).
+
+Copyright (c) 2026 DeckFlow. See [NOTICE](NOTICE) for attribution.
+
+Third-party dependencies retain their respective licenses. See
+[THIRD_PARTY_NOTICES](THIRD_PARTY_NOTICES) for components included in the browser bundle.

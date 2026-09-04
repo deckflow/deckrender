@@ -15,7 +15,7 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
-    "sourceMap": true,
+    "sourceMap": false,
     "outDir": "dist",
     "paths": {
       // @deckops/sdk@0.7.3 declares `types: ./src/index.ts` but only ships `dist`,

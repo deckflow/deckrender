@@ -6,6 +6,18 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-09-04
+
+### Changed
+
+- Change the project license from MIT to Apache-2.0 starting with this release. Previously published releases retain their original MIT license.
+- Add a Chinese frontend integration guide for the browser SDK.
+- Minify the Node.js and browser bundles and stop generating or publishing source maps, keeping the package lightweight.
+
+### Fixed
+
+- Include the original license texts for third-party components bundled in the browser SDK, and ship the project copyright notice in the npm package.
+
 ## [0.3.1] - 2026-09-02
 
 ### Changed
@@ -98,7 +110,7 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
   credential it belongs to, and a `403` naming the caller's own data — a workspace that outlived
   its login — is treated the same way as a `401`. A `402 Payment Required` is never retried: a
   workspace out of balance is a real answer about the account.
-- The interactive browser login now answers a refused *guest* request rather than a refused
+- The interactive browser login now answers a refused _guest_ request rather than a refused
   credential, so a stale token is retried as a guest instead of interrupting the user for a login.
   `credentialsRejected` is exported.
 
@@ -115,7 +127,6 @@ this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.htm
 - `docs/roadmap.md` drops the planned local engine milestone and states the boundary instead:
   DeckRender is a client, a format the cloud cannot convert is not supported, and no local logic
   is added to widen the matrix.
-
 
 ## [0.1.2] - 2026-08-19
 
@@ -210,7 +221,8 @@ output and diffs the result against the documented matrix. Several conversions
 that looked plausible from the type definitions turned out not to work, so the
 matrix reflects measurement rather than inference.
 
-[Unreleased]: https://github.com/deckflow/deckrender/compare/v0.3.1...HEAD
+[Unreleased]: https://github.com/deckflow/deckrender/compare/v0.3.2...HEAD
+[0.3.2]: https://github.com/deckflow/deckrender/compare/v0.3.1...v0.3.2
 [0.3.1]: https://github.com/deckflow/deckrender/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/deckflow/deckrender/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/deckflow/deckrender/compare/v0.2.0...v0.2.1

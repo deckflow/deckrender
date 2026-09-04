@@ -1,6 +1,6 @@
 {
   "name": "@deckflow/deckrender",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Render PPTX, PDF, DOCX, Keynote, HTML and Markdown into images, PDF or video. One command, predictable output.",
   "type": "module",
   "main": "./dist/index.js",
@@ -22,7 +22,9 @@
   "files": [
     "dist",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "NOTICE",
+    "THIRD_PARTY_NOTICES"
   ],
   "scripts": {
     "build": "tsup && tsup --config tsup.browser.config.ts",
@@ -58,7 +60,7 @@
     "thumbnail",
     "document-conversion"
   ],
-  "license": "MIT",
+  "license": "Apache-2.0",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/deckflow/deckrender.git"

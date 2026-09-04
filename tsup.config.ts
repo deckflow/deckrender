@@ -6,7 +6,8 @@ export default defineConfig({
   target: 'node18',
   dts: { banner: '/// <reference types="node" />' },
   clean: true,
-  sourcemap: true,
+  minify: true,
+  sourcemap: false,
   splitting: false,
   // Local-engine dependencies stay optional so cloud-only installations can
   // use --omit=optional without bloating the CLI bundle.
