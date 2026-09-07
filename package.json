@@ -1,6 +1,6 @@
 {
   "name": "@deckflow/deckrender",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "description": "Render PPTX, PDF, DOCX, Keynote, HTML and Markdown into images, PDF or video. One command, predictable output.",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,6 +27,7 @@
     "THIRD_PARTY_NOTICES"
   ],
   "scripts": {
+    "prepack": "node scripts/sync-version.mjs --check && pnpm build",
     "build": "tsup && tsup --config tsup.browser.config.ts",
     "dev": "tsup --watch",
     "dev:browser": "tsup --config tsup.browser.config.ts --watch",
