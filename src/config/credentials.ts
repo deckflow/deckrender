@@ -23,8 +23,7 @@ export const SharedCredentialsSchema = z
 export type SharedCredentials = z.infer<typeof SharedCredentialsSchema>;
 
 /** Where a resolved value came from. Surfaced by `deckrender config list`. */
-export type CredentialSource =
-  'flag' | `env:${string}` | 'file:~/.deckflow/credentials' | 'default';
+export type CredentialSource = 'flag' | `env:${string}` | 'file:~/.deckflow/credentials' | 'default';
 
 export interface ResolvedCredentials {
   apiKey?: string;

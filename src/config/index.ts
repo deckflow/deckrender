@@ -32,9 +32,4 @@ export {
   type SharedCredentials,
 } from './credentials.js';
 
-export {
-  configPath,
-  credentialsPath,
-  deckflowDir,
-  deckrenderDir,
-} from './paths.js';
+export { configPath, credentialsPath, deckflowDir, deckrenderDir } from './paths.js';
