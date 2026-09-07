@@ -144,7 +144,7 @@ The backend remains responsible for authorization and guest rate limiting.
 
 Never put a long-lived application API key in a frontend bundle. When your
 application only has such a key, use an authenticated server integration. A custom
-`apiBase` must be an absolute HTTP(S) DeckOps-compatible API root without a query
+`apiBase` must be an absolute HTTP(S) DeckTools-compatible API root without a query
 or fragment, **not** an
 arbitrary render endpoint. For a same-origin proxy use, for example,
 `new URL('/api/deckops', window.location.origin).href`; enforce user/space/task
@@ -176,12 +176,10 @@ node scripts/browser-fixture.mjs # optional interactive browser test page
 
 The Node build runs first, then a separate browser build emits
 `dist/browser/index.js` and `index.d.ts`. The browser bundle includes its transport
-dependencies so consumers never resolve the broken upstream entry themselves.
+dependencies so consumers need no external transport package or Node polyfills.
 
-Upstream `@deckops/sdk@0.7.3` supports browser uploads/SSE but still publishes Node
-dynamic imports and an incorrect type entry. `scripts/deckops-browser.ts` is a
-build-only, SHA-256-guarded compatibility bridge: it removes filesystem inputs,
-Node UUID persistence and Node runtime selection while preserving the existing
-upload/hash/multipart/task implementation. It does not edit `node_modules`, add
-polyfills, or affect the Node build. Unknown upstream contents fail the build.
-Replace this bridge with a verified upstream browser export when one is available.
+`@deckflow/decktools-sdk@1.0.0` provides a maintained `/browser` export and valid
+type exports. The browser build resolves the shared transport import to that
+entry. The former source-rewriting bridge and type-resolution workarounds have
+been removed. Unit tests, isolated DOM types and the browser consumer check cover
+the published package directly.

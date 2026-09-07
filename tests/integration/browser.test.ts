@@ -1,6 +1,6 @@
 import { File as NodeFile } from 'node:buffer';
 import { webcrypto } from 'node:crypto';
-import { APIError } from '@deckops/sdk';
+import { APIError } from '@deckflow/decktools-sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createRenderer,
@@ -13,8 +13,8 @@ import {
 import { createFakeClient, frames, singleFile, type FakeClient } from './fake-client.js';
 
 const createDeck = vi.hoisted(() => vi.fn());
-vi.mock('@deckops/sdk', async (original) => ({
-  ...(await original<typeof import('@deckops/sdk')>()),
+vi.mock('@deckflow/decktools-sdk', async (original) => ({
+  ...(await original<typeof import('@deckflow/decktools-sdk')>()),
   createDeck,
 }));
 

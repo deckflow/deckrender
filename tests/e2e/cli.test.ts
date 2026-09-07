@@ -225,7 +225,8 @@ describe('config', () => {
     const payload = JSON.parse(result.stdout);
 
     expect(payload.credentials).toMatchObject({ apiKey: null, token: null, spaceId: null });
-    expect(payload.files.deckops).toBe(path.join(configDir, 'config.json'));
+    expect(payload.files.credentials).toBe(path.join(configDir, 'credentials'));
+    expect(payload.files.deckops).toBeUndefined();
   });
 
   it('stores render defaults separately from shared credentials', async () => {

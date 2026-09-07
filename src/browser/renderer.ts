@@ -1,4 +1,4 @@
-import { createDeck } from '@deckops/sdk';
+import { createDeck } from '@deckflow/decktools-sdk';
 import { buildPlan } from '../core/plan.js';
 import { parsePageSelection } from '../core/pages.js';
 import { validateRenderOptions } from '../core/validation.js';

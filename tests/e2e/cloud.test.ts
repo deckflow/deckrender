@@ -11,7 +11,7 @@ const run = promisify(execFile);
 const CLI = fileURLToPath(new URL('../../dist/cli.js', import.meta.url));
 const describeCloud = process.env.DECKRENDER_E2E === '1' ? describe : describe.skip;
 
-describeCloud('real DeckOps guest smoke test', () => {
+describeCloud('real DeckTools guest smoke test', () => {
   let workDir: string;
 
   beforeAll(async () => {

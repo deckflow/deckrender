@@ -1,4 +1,4 @@
-import type { DeckTaskType } from '@deckops/sdk';
+import type { DeckTaskType } from '@deckflow/decktools-sdk';
 
 /** Built-in render backend selection. `auto` prefers a capable local route. */
 export const ENGINE_PREFERENCES = ['local', 'cloud', 'auto'] as const;
@@ -53,7 +53,7 @@ export type ProfileName = (typeof PROFILE_NAMES)[number];
 /**
  * A step in a RenderPlan.
  *
- * Cloud plans contain DeckOps tasks; local plans contain LocalTaskType values.
+ * Cloud plans contain DeckTools tasks; local plans contain LocalTaskType values.
  * `passthrough` copies the input unchanged, which is not a render.
  */
 export type RenderStepTask = DeckTaskType | LocalTaskType | 'passthrough';

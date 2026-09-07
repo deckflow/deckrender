@@ -1,16 +1,16 @@
-import type { DeckTaskType } from '@deckops/sdk';
+import type { DeckTaskType } from '@deckflow/decktools-sdk';
 import type { RouteKind, SourceFormat, TargetFormat } from '../types.js';
 
 /**
  * The render matrix.
  *
  * Every entry here is backed by a task type that actually exists in
- * @deckops/sdk — see docs/formats.md for the line-by-line citations.
+ * @deckflow/decktools-sdk — see docs/formats.md for the line-by-line citations.
  * Absence from this table is the single source of truth for
  * `unsupported_format`.
  *
  * This is the cloud matrix only. A format the backend cannot convert stays a
- * visible cloud gap until DeckOps gains a task; the separate local matrix must
+ * visible cloud gap until DeckTools gains a task; the separate local matrix must
  * not be used to make this table look wider than the managed service is.
  */
 export interface BaseRoute {
@@ -101,7 +101,7 @@ export const ROUTES: Readonly<Record<SourceFormat, Partial<Record<TargetFormat, 
   md: {
     image: { kind: 'direct', tasks: ['convertor.markdown2png'] },
   },
-  // iWork word processing and spreadsheet documents have no DeckOps converter.
+  // iWork word processing and spreadsheet documents have no DeckTools converter.
   // Nothing is offered until one exists: extracting the embedded first-page
   // preview here would answer with a thumbnail dressed up as a render.
   pages: {},
@@ -150,7 +150,7 @@ const NO_CAPABILITY: TaskCapability = {
 };
 
 /**
- * Per-task capabilities, read off the @deckops/sdk parameter types.
+ * Per-task capabilities, read off the @deckflow/decktools-sdk parameter types.
  *
  * `{ kind: 'none' }` means the backend accepts no such parameter at all — the
  * corresponding CLI flag must raise `unsupported_option` rather than be

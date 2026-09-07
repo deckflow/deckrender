@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { APIError } from '@deckops/sdk';
+import { APIError } from '@deckflow/decktools-sdk';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createRenderer } from '../../src/core/renderer.js';
 import { CloudEngine } from '../../src/engines/cloud.js';
@@ -456,7 +456,7 @@ describe('failure reporting', () => {
       // The SDK's rejection names neither the task nor its id, so the engine
       // has to add them back or the failure is uninvestigatable.
       expect(err.message).toContain('convertor.ppt2image');
-      expect(err.hint).toMatch(/deckops task get task-\d+/);
+      expect(err.hint).toMatch(/decktools task get task-\d+/);
     }
   });
 
@@ -473,7 +473,7 @@ describe('failure reporting', () => {
     const engine = new CloudEngine({
       client: fake.client,
       authenticated: true,
-      credentialOrigin: () => 'token from ~/.deckops/config.json',
+      credentialOrigin: () => 'token from ~/.deckflow/credentials',
     });
 
     try {
@@ -485,7 +485,7 @@ describe('failure reporting', () => {
     } catch (error) {
       const err = error as DeckRenderError;
       expect(err.code).toBe('auth_error');
-      expect(err.hint).toContain('token from ~/.deckops/config.json');
+      expect(err.hint).toContain('token from ~/.deckflow/credentials');
       expect(err.hint).toContain('guest mode');
       expect(err.requestId).toBe('req-401');
     }

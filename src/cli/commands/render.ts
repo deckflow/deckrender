@@ -140,7 +140,7 @@ function rejectVideoTuning(options: RenderCliOptions): void {
     `${given.map((key) => `--${key}`).join(', ')} ${given.length > 1 ? 'are' : 'is'} not supported yet.`,
     {
       hint:
-        'The DeckOps task convertor.ppt2video accepts no parameters. ' +
+        'The DeckTools task convertor.ppt2video accepts no parameters. ' +
         'Video tuning is tracked for v0.3 — see docs/roadmap.md.',
     }
   );

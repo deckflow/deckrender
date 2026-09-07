@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { createDeck, type DeckClient } from '@deckops/sdk';
+import { createDeck, type DeckClient } from '@deckflow/decktools-sdk';
 import { credentialsRejected, DeckRenderError } from '../errors/index.js';
 import { CloudEngine } from '../engines/cloud.js';
 import { LocalEngine } from '../engines/local/index.js';
@@ -22,7 +22,7 @@ import { concreteEngineFor, resolveEnginePreference } from './engine-selection.j
 import { renderArtifacts, safeCleanup } from './execute.js';
 
 export interface RendererOptions extends CredentialOverrides {
-  /** Pre-built DeckOps client. Supplying one skips credential resolution. */
+  /** Pre-built DeckTools client. Supplying one skips credential resolution. */
   client?: DeckClient;
   /** Custom engine. Overrides built-in engine construction. */
   engine?: RenderEngine;

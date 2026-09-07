@@ -16,7 +16,7 @@ export interface BrowserProgressEvent {
 }
 
 export interface BrowserRendererOptions {
-  /** DeckOps API root. Defaults to https://app.deckflow.com/v1. */
+  /** DeckTools API root. Defaults to https://app.deckflow.com/v1. */
   apiBase?: string;
   /** User token, never an application API key. Kept in memory only. */
   token?: string;

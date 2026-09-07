@@ -1,4 +1,4 @@
-import type { DeckClient, DeckTask, DeckTaskType } from '@deckops/sdk';
+import type { DeckClient, DeckTask, DeckTaskType } from '@deckflow/decktools-sdk';
 
 export interface RecordedTask {
   type: DeckTaskType;

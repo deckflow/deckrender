@@ -1,4 +1,4 @@
-import { APIError } from '@deckops/sdk';
+import { APIError } from '@deckflow/decktools-sdk';
 import { DeckRenderError, isDeckRenderError } from './DeckRenderError.js';
 import type { ErrorCode } from './codes.js';
 
@@ -49,7 +49,7 @@ function describe(error: APIError): string {
  *
  * DeckRenderErrors pass through untouched — they already carry the code the
  * caller intended. Everything else is classified, with `APIError` (from
- * @deckops/sdk) mapped by HTTP status so that 401/402 surface as auth failures
+ * @deckflow/decktools-sdk) mapped by HTTP status so that 401/402 surface as auth failures
  * rather than generic render failures.
  */
 export function mapSdkError(

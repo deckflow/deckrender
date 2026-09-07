@@ -2,14 +2,14 @@ import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { APIError, type CreateDeckOptions, type DeckClient } from '@deckops/sdk';
+import { APIError, type CreateDeckOptions, type DeckClient } from '@deckflow/decktools-sdk';
 import { createFakeClient, frames } from './fake-client.js';
 
 /**
  * A credential the backend rejects is not a credential.
  *
  * The render carries on as a guest instead of failing: an expired login, or a
- * token another DeckFlow tool left in `~/.deckops/config.json`, must not break
+ * token another DeckFlow tool left in `~/.deckflow/credentials`, must not break
  * the promise that rendering works with no setup at all. Agents see this where
  * an interactive terminal does not, and cannot diagnose invisible machine state.
  *
@@ -20,8 +20,8 @@ import { createFakeClient, frames } from './fake-client.js';
 const deckCalls: CreateDeckOptions[] = [];
 let clients: DeckClient[] = [];
 
-vi.mock('@deckops/sdk', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@deckops/sdk')>();
+vi.mock('@deckflow/decktools-sdk', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@deckflow/decktools-sdk')>();
   return {
     ...actual,
     createDeck: (options: CreateDeckOptions = {}) => {
@@ -108,7 +108,7 @@ async function deck(): Promise<string> {
 
 describe('credential rejected by the backend', () => {
   it('retries in guest mode instead of failing', async () => {
-    await writeJson(path.join(workDir, 'deckops', 'config.json'), {
+    await writeJson(path.join(workDir, 'deckflow', 'credentials'), {
       token: 'stale-token',
       spaceId: 'space-from-deckops',
     });
@@ -128,7 +128,7 @@ describe('credential rejected by the backend', () => {
   });
 
   it('sends nothing from the rejected credential on the retry', async () => {
-    await writeJson(path.join(workDir, 'deckops', 'config.json'), {
+    await writeJson(path.join(workDir, 'deckflow', 'credentials'), {
       token: 'stale-token',
       spaceId: 'space-from-deckops',
     });
@@ -151,7 +151,7 @@ describe('credential rejected by the backend', () => {
   });
 
   it('names where the rejected credential came from', async () => {
-    await writeJson(path.join(workDir, 'deckops', 'config.json'), { token: 'stale-token' });
+    await writeJson(path.join(workDir, 'deckflow', 'credentials'), { token: 'stale-token' });
     const working = createFakeClient({ results: { 'convertor.ppt2image': frames(1) } });
     clients = [unauthorizedClient(), working.client];
 
@@ -162,11 +162,11 @@ describe('credential rejected by the backend', () => {
       out: path.join(workDir, 'out'),
     });
 
-    expect(warnings.join('\n')).toMatch(/~\/\.deckops\/config\.json/);
+    expect(warnings.join('\n')).toMatch(/~\/\.deckflow\/credentials/);
   });
 
   it('starts the retried tasks explicitly, as guest tasks require', async () => {
-    await writeJson(path.join(workDir, 'deckops', 'config.json'), { token: 'stale-token' });
+    await writeJson(path.join(workDir, 'deckflow', 'credentials'), { token: 'stale-token' });
     const working = createFakeClient({ results: { 'convertor.ppt2image': frames(1) } });
     clients = [unauthorizedClient(), working.client];
 
@@ -194,7 +194,7 @@ describe('every credential source', () => {
     ],
     [
       "another tool's leftover token",
-      async () => writeJson(path.join(workDir, 'deckops', 'config.json'), { token: 'stale' }),
+      async () => writeJson(path.join(workDir, 'deckflow', 'credentials'), { token: 'stale' }),
     ],
   ])('falls back to guest for %s', async (_label, arrange) => {
     await arrange();
@@ -235,7 +235,7 @@ describe('every credential source', () => {
   });
 
   it('gives up rather than looping when guest is rejected too', async () => {
-    await writeJson(path.join(workDir, 'deckops', 'config.json'), { token: 'stale' });
+    await writeJson(path.join(workDir, 'deckflow', 'credentials'), { token: 'stale' });
     clients = [unauthorizedClient(), unauthorizedClient()];
 
     await expect(
@@ -252,7 +252,7 @@ describe('every credential source', () => {
 
 describe('failures that are not a bad credential', () => {
   it('does not retry a payment failure as guest', async () => {
-    await writeJson(path.join(workDir, 'deckops', 'config.json'), { token: 'stale-token' });
+    await writeJson(path.join(workDir, 'deckflow', 'credentials'), { token: 'stale-token' });
     const paymentRequired = async (): Promise<never> => {
       throw new APIError('Payment required', 402, undefined, 'req-402');
     };

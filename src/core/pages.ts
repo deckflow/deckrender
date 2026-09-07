@@ -7,7 +7,7 @@ import { MAX_PAGE_NUMBER } from './validation.js';
  * 1-based, inclusive ranges. Returns sorted unique page numbers.
  *
  * Note this only *selects* pages for download — the backend still renders the
- * whole document, because no DeckOps conversion task accepts a page range.
+ * whole document, because no DeckTools conversion task accepts a page range.
  * See docs/formats.md.
  */
 export function parsePageSelection(spec: string): number[] {

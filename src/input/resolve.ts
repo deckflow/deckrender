@@ -88,7 +88,7 @@ async function resolveStdin(options: ResolveInputOptions): Promise<RenderInput> 
  * Fetch a hosted page.
  *
  * The HTML is resolved locally rather than sent as a URL. `html.getByURL` —
- * which would capture the runtime DOM — exists in the DeckOps source tree but
+ * which would capture the runtime DOM — exists in the DeckTools source tree but
  * is not in the published SDK, so v0.1 fetches the document here and rewrites
  * its base URL. Scripts still run: the backend renders the HTML in a browser.
  * See docs/roadmap.md.

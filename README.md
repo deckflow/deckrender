@@ -137,7 +137,7 @@ DeckRender works with no setup at all — rendering runs in guest mode. Log in w
 deckrender auth login
 ```
 
-Credentials are stored in `~/.deckflow/credentials` and **shared across every DeckFlow CLI**. Log in once through DeckRender and DeckHTML picks it up too, and vice versa. If your machine already has `DECKHTML_API_KEY` set, or you have logged in with the `deckops` CLI, DeckRender uses that automatically.
+Credentials are stored in `~/.deckflow/credentials` and **shared across every DeckFlow CLI**. Log in once through DeckRender, DeckHTML or `decktools` and the other tools use the shared credentials. `DECKHTML_API_KEY` is also recognized. The former `~/.deckops/config.json` is no longer read: use the new DeckOps `config migrate` command once before switching. Neither DeckOps nor DeckTools product directories override DeckRender's shared credential storage.
 
 A credential the backend rejects is treated as no credential: DeckRender drops it and retries the render in guest mode, warning on stderr rather than failing. Rendering is supposed to work with no setup at all, and stale state on a machine should not take that away. See [`docs/errors.md`](docs/errors.md#a-rejected-credential-falls-back-to-guest-mode).
 
@@ -221,12 +221,12 @@ Input (file | URL | stdin)
    → InputResolver     normalize and classify
    → RenderPlan        engine-specific source × target route table
    → LocalEngine       office2html + Chromium + PDF.js
-     or CloudEngine    DeckOps tasks
+     or CloudEngine    DeckTools tasks
    → ArtifactWriter    page selection, naming, files / directory / zip
    → Result            human text or --json
 ```
 
-Cloud rendering is performed through [`@deckops/sdk`](https://www.npmjs.com/package/@deckops/sdk). Community rendering uses the bundled local orchestration layer and optional local dependencies. Both share input resolution, artifact naming, errors and the result contract.
+Cloud rendering is performed through [`@deckflow/decktools-sdk`](https://www.npmjs.com/package/@deckflow/decktools-sdk). Community rendering uses the bundled local orchestration layer and optional local dependencies. Both share input resolution, artifact naming, errors and the result contract.
 
 ### Where rendering happens
 
@@ -260,7 +260,7 @@ plausible-looking conversions do not actually work, so a route inferred from typ
 definitions alone can be wrong. `pnpm test:conformance` confirms the matrix end
 to end.
 
-A missing local route stays local-only unsupported and never falls back unless the user explicitly selected `auto`. A missing cloud route remains an upstream DeckOps ask; do not use one matrix to conceal a gap in the other.
+A missing local route stays local-only unsupported and never falls back unless the user explicitly selected `auto`. A missing cloud route remains an upstream DeckTools ask; do not use one matrix to conceal a gap in the other.
 
 The `--json` envelope, error codes, exit codes and the shared credential file
 format are what other people's scripts depend on. Changing any of them is a

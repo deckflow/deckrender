@@ -1,5 +1,4 @@
 import { defineConfig } from 'tsup';
-import { deckopsBrowserPlugin } from './scripts/deckops-browser.js';
 
 export default defineConfig({
   entry: { index: 'src/browser.ts' },
@@ -8,9 +7,11 @@ export default defineConfig({
   format: ['esm'],
   platform: 'browser',
   target: 'es2022',
-  // Ship the audited upstream browser implementation, not a broken external import.
+  // Bundle the SDK's maintained browser entry; no source rewriting bridge.
   noExternal: [/.*/],
-  esbuildPlugins: [deckopsBrowserPlugin()],
+  esbuildOptions(options) {
+    options.alias = { ...options.alias, '@deckflow/decktools-sdk': '@deckflow/decktools-sdk/browser' };
+  },
   dts: true,
   clean: true,
   splitting: false,

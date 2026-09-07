@@ -12,12 +12,10 @@ import path from 'node:path';
  * - `~/.deckrender/` holds render defaults that are ours alone, so profile and
  *   image-format preferences never pollute the shared credential file.
  *
- * `~/.deckops/config.json` is read as a fallback but **never** written — it is
- * the DeckOps CLI's own state.
+ * Product configuration from DeckTools or DeckTools is not a credential source.
  */
 export const DECKFLOW_DIR_ENV = 'DECKFLOW_CONFIG_DIR';
 export const DECKRENDER_DIR_ENV = 'DECKRENDER_CONFIG_DIR';
-export const DECKOPS_DIR_ENV = 'DECKOPS_CONFIG_DIR';
 
 export function deckflowDir(): string {
   return process.env[DECKFLOW_DIR_ENV] ?? path.join(os.homedir(), '.deckflow');
@@ -25,10 +23,6 @@ export function deckflowDir(): string {
 
 export function deckrenderDir(): string {
   return process.env[DECKRENDER_DIR_ENV] ?? path.join(os.homedir(), '.deckrender');
-}
-
-export function deckopsDir(): string {
-  return process.env[DECKOPS_DIR_ENV] ?? path.join(os.homedir(), '.deckops');
 }
 
 /** Shared credential file. Format defined in docs/configuration.md. */
@@ -39,11 +33,6 @@ export function credentialsPath(): string {
 /** DeckRender's own render defaults. */
 export function configPath(): string {
   return path.join(deckrenderDir(), 'config.json');
-}
-
-/** DeckOps CLI config, read-only fallback. */
-export function deckopsConfigPath(): string {
-  return path.join(deckopsDir(), 'config.json');
 }
 
 /** Directory mode for config dirs — matches what other DeckFlow tools create. */

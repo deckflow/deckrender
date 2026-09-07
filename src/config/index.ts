@@ -23,7 +23,6 @@ export {
   displayPath,
   hasCredentials,
   maskSecret,
-  readDeckopsConfig,
   readSharedCredentials,
   resolveCredentials,
   writeSharedCredentials,
@@ -37,7 +36,5 @@ export {
   configPath,
   credentialsPath,
   deckflowDir,
-  deckopsConfigPath,
-  deckopsDir,
   deckrenderDir,
 } from './paths.js';

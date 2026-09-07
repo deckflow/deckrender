@@ -45,7 +45,7 @@ try {
   );
   assert(!Object.keys(built.metafile.inputs).some((file) => /playwright|office2html|pdfjs|node:/.test(file)));
   const declarations = await readFile(path.join(pkg, 'dist/browser/index.d.ts'), 'utf8');
-  assert(!/reference types="node"|from ['"](?:node:|@deckops)|\bNodeJS\b/.test(declarations));
+  assert(!/reference types="node"|from ['"](?:node:|@deckops|@deckflow\/decktools-sdk)|\bNodeJS\b/.test(declarations));
   // Native module import in Node must also be side-effect free (SSR import safety).
   const imported = await import(new URL('../dist/browser/index.js', import.meta.url));
   assert.equal(typeof imported.createRenderer, 'function');

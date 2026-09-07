@@ -5,7 +5,7 @@ import { DeckRenderError } from '../errors/index.js';
  * Browser login.
  *
  * The URL shape, callback port and query parameter names are copied verbatim
- * from the DeckOps CLI (apps/node-cli/src/core/auth.ts). That is the point:
+ * from the DeckTools CLI (apps/node-cli/src/core/auth.ts). That is the point:
  * a token minted through `deckrender auth login` has to be the same token
  * `deckops` and `deckhtml` would have obtained, or the shared credential file
  * in ~/.deckflow would be useless.

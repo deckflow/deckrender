@@ -4,7 +4,7 @@
 
 ### v0.1 — cloud client
 
-- Cloud conversion over `@deckops/sdk`
+- Cloud conversion over `@deckflow/decktools-sdk`
 - Profiles, JSON envelope, page selection, zip/stdout output
 - Shared credentials and guest mode
 
@@ -34,7 +34,7 @@ The Community engine sells local capability: engine, CLI and SDK. The cloud tier
 
 - Explicit `local` is strict and never falls back.
 - `auto` is local-first and warns before selecting cloud.
-- Cloud-only combinations remain upstream DeckOps asks.
+- Cloud-only combinations remain upstream DeckTools asks.
 - Local-only planned combinations remain upstream `office2html` asks.
 
 See [engines.md](engines.md) for setup and privacy details.
@@ -43,7 +43,7 @@ See [engines.md](engines.md) for setup and privacy details.
 
 ### Browser SDK follow-ups
 
-- Replace the temporary checksum-guarded upstream build bridge when DeckOps publishes a browser-safe export.
+- Replace the temporary checksum-guarded upstream build bridge when DeckTools publishes a browser-safe export.
 - Production-origin CORS validation and live conversion checks remain deployment acceptance work.
 
 ### Local distribution and offline fidelity
@@ -64,7 +64,7 @@ See [engines.md](engines.md) for setup and privacy details.
 
 | Ask | Unlocks |
 | --- | ------- |
-| Publish a resolvable `@deckops/sdk` successor to 0.7.3 | Remove the current dependency pin and tsconfig declaration workaround |
+| Publish a resolvable `@deckflow/decktools-sdk` successor to 0.7.3 | Remove the current dependency pin and tsconfig declaration workaround |
 | Publish a browser-safe SDK export with correct declarations | Remove the browser build compatibility bridge |
 | Publish `html.getByURL` | Runtime-DOM cloud URL capture |
 | Parameters for `convertor.ppt2video` | FPS, duration and transitions |
@@ -80,4 +80,4 @@ The CLI JSON envelope, error codes, exit codes, engine-selection semantics and a
 
 ## Out of scope
 
-DeckRender renders. It does not parse document meaning, extract text, understand structure or edit files. Those belong to DeckProbe, DeckUse and DeckOps.
+DeckRender renders. It does not parse document meaning, extract text, understand structure or edit files. Those belong to DeckProbe, DeckUse and DeckTools.

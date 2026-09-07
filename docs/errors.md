@@ -129,7 +129,7 @@ at all: it drops the credential, retries the render as a guest, and warns on
 stderr.
 
 ```
-Warning: The backend rejected the token from ~/.deckops/config.json, so it is
+Warning: The backend rejected the token from ~/.deckflow/credentials, so it is
 being ignored and the render retried in guest mode, which is rate-limited. Run
 `deckrender auth login` for full access, or `deckrender config list` to see where
 that credential came from.
@@ -189,5 +189,5 @@ A backend task that ends in `failed` surfaces as `render_error` with the backend
 
 ```
 Error: Task convertor.ppt2image failed: unsupported embedded font
-  Inspect the task with: deckops task get task_abc123
+  Inspect the task with: decktools task get task_abc123
 ```

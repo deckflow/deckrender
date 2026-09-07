@@ -16,14 +16,7 @@
     "forceConsistentCasingInFileNames": true,
     "declaration": true,
     "sourceMap": false,
-    "outDir": "dist",
-    "paths": {
-      // @deckops/sdk@0.7.3 declares `types: ./src/index.ts` but only ships `dist`,
-      // so its own type entry does not exist in the published tarball.
-      // Point at the emitted declarations until the upstream package.json is fixed.
-      // Runtime resolution is unaffected: `exports.import` already targets dist/index.js.
-      "@deckops/sdk": ["./node_modules/@deckops/sdk/dist/index.d.ts"]
-    }
+    "outDir": "dist"
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist", "tests/consumer", "tests/browser-consumer"]

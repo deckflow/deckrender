@@ -1,5 +1,5 @@
 import pLimit from 'p-limit';
-import { isRetriableError, type DeckClient, type DeckTask, type DeckTaskType } from '@deckops/sdk';
+import { isRetriableError, type DeckClient, type DeckTask, type DeckTaskType } from '@deckflow/decktools-sdk';
 import { DeckRenderError, mapSdkError, type ErrorCode } from '../errors/index.js';
 import { applyPageSelection } from '../core/pages.js';
 import type { ProgressEvent, RenderArtifact, RenderPlan, RenderStep } from '../types.js';
@@ -76,7 +76,7 @@ export class CloudEngine implements RenderEngine {
 
   supports(plan: RenderPlan): boolean {
     // Passthrough never reaches an engine; everything else in the matrix maps
-    // to DeckOps task types by construction.
+    // to DeckTools task types by construction.
     return (
       plan.kind !== 'passthrough' &&
       plan.steps.every((step) => step.task !== 'passthrough' && !step.task.startsWith('local.'))
@@ -260,7 +260,7 @@ export class CloudEngine implements RenderEngine {
       throw DeckRenderError.render('Pipeline step produced no artifact to feed the next step.');
     }
 
-    // Chained steps have to round-trip through storage: DeckOps has no way to
+    // Chained steps have to round-trip through storage: DeckTools has no way to
     // use one task's output as another task's input by id.
     report(ctx, { phase: 'download', message: 'Fetching intermediate artifact' });
     const bytes = await this.download(first.source);
@@ -360,7 +360,7 @@ function report(ctx: ExecuteContext, event: ProgressEvent): void {
 }
 
 function taskHint(taskId: string, runtime: 'node' | 'browser'): string {
-  return runtime === 'browser' ? `Task ID: ${taskId}` : `Inspect the task with: deckops task get ${taskId}`;
+  return runtime === 'browser' ? `Task ID: ${taskId}` : `Inspect the task with: decktools task get ${taskId}`;
 }
 
 function delay(ms: number): Promise<void> {

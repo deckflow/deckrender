@@ -3,7 +3,7 @@ import { exitCodeFor, type ErrorCode, type ExitCodeValue } from './codes.js';
 export interface DeckRenderErrorOptions {
   /** Actionable next step. Rendered on its own line after the message. */
   hint?: string;
-  /** Backend request id, when the failure came from the DeckOps API. */
+  /** Backend request id, when the failure came from the DeckTools API. */
   requestId?: string;
   cause?: unknown;
 }

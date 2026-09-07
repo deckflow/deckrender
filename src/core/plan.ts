@@ -1,4 +1,4 @@
-import type { DeckTaskType } from '@deckops/sdk';
+import type { DeckTaskType } from '@deckflow/decktools-sdk';
 import { DeckRenderError } from '../errors/DeckRenderError.js';
 import { findLocalRoute, localPlannedReason, localSupportedTargets } from '../engines/local/routes.js';
 import type {
@@ -61,7 +61,7 @@ export interface PlanResult {
  * Quality presets.
  *
  * `--quality` is an alias for a (long edge, encoding) pair on image routes —
- * the DeckOps PDF tasks accept no quality parameters at all, so it raises
+ * the DeckTools PDF tasks accept no quality parameters at all, so it raises
  * `unsupported_option` there. See docs/formats.md.
  */
 const QUALITY_PRESETS: Record<Quality, { tiered: number; free: number; imageFormat: ImageFormat }> = {
@@ -336,7 +336,7 @@ function validateOptions(input: PlanInput, routeTasks: DeckTaskType[], warnings:
         'quality',
         '--quality',
         `--quality is not supported for ${target} output.`,
-        'The DeckOps PDF and video tasks accept no quality parameters.'
+        'The DeckTools PDF and video tasks accept no quality parameters.'
       );
     }
     if (effective.pages) {

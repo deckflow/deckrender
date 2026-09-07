@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { Command } from 'commander';
-import { createDeck } from '@deckops/sdk';
+import { createDeck } from '@deckflow/decktools-sdk';
 import { runLoginFlow } from '../../auth/login.js';
 import { mapSdkError } from '../../errors/index.js';
 import {

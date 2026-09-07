@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { z } from 'zod';
-import { DIR_MODE, SECRET_FILE_MODE, credentialsPath, deckflowDir, deckopsConfigPath } from './paths.js';
+import { DIR_MODE, SECRET_FILE_MODE, credentialsPath, deckflowDir } from './paths.js';
 
 /**
  * Shape of `~/.deckflow/credentials`.
@@ -24,7 +24,7 @@ export type SharedCredentials = z.infer<typeof SharedCredentialsSchema>;
 
 /** Where a resolved value came from. Surfaced by `deckrender config list`. */
 export type CredentialSource =
-  'flag' | `env:${string}` | 'file:~/.deckflow/credentials' | 'file:~/.deckops/config.json' | 'default';
+  'flag' | `env:${string}` | 'file:~/.deckflow/credentials' | 'default';
 
 export interface ResolvedCredentials {
   apiKey?: string;
@@ -86,41 +86,21 @@ export async function readSharedCredentials(): Promise<SharedCredentials> {
   return parsed.success ? parsed.data : {};
 }
 
-/** DeckOps CLI config. Read-only — DeckRender never writes to this file. */
-const DeckopsConfigSchema = z
-  .object({
-    token: z.string().min(1).optional(),
-    spaceId: z.string().min(1).optional(),
-    apiBase: z.string().url().optional(),
-  })
-  .passthrough();
-
-export async function readDeckopsConfig(): Promise<z.infer<typeof DeckopsConfigSchema>> {
-  const raw = await readJsonFile(deckopsConfigPath());
-  if (raw === undefined) {
-    return {};
-  }
-  const parsed = DeckopsConfigSchema.safeParse(raw);
-  return parsed.success ? parsed.data : {};
-}
-
 /**
- * Resolve credentials through the five-level chain in docs/configuration.md:
+ * Resolve credentials through the shared credential chain:
  *
- *   flags → env → ~/.deckflow/credentials → ~/.deckops/config.json → defaults
+ *   flags → env → ~/.deckflow/credentials → defaults
  *
  * Each field resolves independently, so an API key from the environment can
- * combine with a spaceId stored by the DeckOps CLI.
+ * combine with a spaceId stored by the DeckTools CLI.
  */
 export async function resolveCredentials(overrides: CredentialOverrides = {}): Promise<ResolvedCredentials> {
   const shared = await readSharedCredentials();
-  const deckops = await readDeckopsConfig();
 
   const pick = (
     override: string | undefined,
     envNames: readonly string[],
-    sharedValue: string | undefined,
-    deckopsValue: string | undefined
+    sharedValue: string | undefined
   ): { value: string | undefined; source: CredentialSource | undefined } => {
     if (override && override.trim()) {
       return { value: override.trim(), source: 'flag' };
@@ -132,16 +112,13 @@ export async function resolveCredentials(overrides: CredentialOverrides = {}): P
     if (sharedValue) {
       return { value: sharedValue, source: 'file:~/.deckflow/credentials' };
     }
-    if (deckopsValue) {
-      return { value: deckopsValue, source: 'file:~/.deckops/config.json' };
-    }
     return { value: undefined, source: undefined };
   };
 
-  const apiKey = pick(overrides.apiKey, API_KEY_ENV_VARS, shared.apiKey, undefined);
-  const token = pick(overrides.token, TOKEN_ENV_VARS, shared.token, deckops.token);
-  const spaceId = pick(overrides.spaceId, SPACE_ID_ENV_VARS, shared.spaceId, deckops.spaceId);
-  const apiBase = pick(overrides.apiBase, API_BASE_ENV_VARS, shared.apiBase, deckops.apiBase);
+  const apiKey = pick(overrides.apiKey, API_KEY_ENV_VARS, shared.apiKey);
+  const token = pick(overrides.token, TOKEN_ENV_VARS, shared.token);
+  const spaceId = pick(overrides.spaceId, SPACE_ID_ENV_VARS, shared.spaceId);
+  const apiBase = pick(overrides.apiBase, API_BASE_ENV_VARS, shared.apiBase);
 
   return {
     ...(apiKey.value ? { apiKey: apiKey.value } : {}),
@@ -177,7 +154,7 @@ function sourceLabel(source: CredentialSource): string {
  * Describe which credentials are being sent, and where they came from.
  *
  * The resolution chain picks up credentials nobody configured for DeckRender —
- * another DeckFlow tool's `~/.deckops/config.json`, an exported
+ * another DeckFlow tool's `~/.deckflow/credentials`, an exported
  * `DECKHTML_API_KEY`. When one of those is expired the backend answers with a
  * bare "Authentication failed" and nothing points at the file to clean up.
  * Returns undefined in guest mode, where there is no credential to name.

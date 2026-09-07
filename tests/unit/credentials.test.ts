@@ -12,7 +12,7 @@ import {
 } from '../../src/config/credentials.js';
 
 /**
- * The five-level resolution chain spans three files and three env var groups.
+ * Credential resolution uses shared storage and explicit environment groups.
  * It is the part most likely to break silently during refactors, and breaking
  * it breaks the PRD's hard requirement that DeckHTML and DeckRender share auth.
  */
@@ -86,15 +86,15 @@ describe('resolveCredentials precedence', () => {
     expect(resolved.sources.apiKey).toBe('file:~/.deckflow/credentials');
   });
 
-  it('reads a DeckOps CLI login as a fallback', async () => {
+  it('does not read the former DeckTools product directory', async () => {
     await writeDeckops({ token: 'deckops-token', spaceId: 'space-1' });
     const resolved = await resolveCredentials();
-    expect(resolved.token).toBe('deckops-token');
-    expect(resolved.spaceId).toBe('space-1');
-    expect(resolved.sources.token).toBe('file:~/.deckops/config.json');
+    expect(resolved.token).toBeUndefined();
+    expect(resolved.spaceId).toBeUndefined();
+    expect(resolved.sources.token).toBeUndefined();
   });
 
-  it('prefers the shared file over the DeckOps fallback', async () => {
+  it('prefers the shared file over the DeckTools fallback', async () => {
     await writeDeckflow({ token: 'shared' });
     await writeDeckops({ token: 'deckops' });
     expect((await resolveCredentials()).token).toBe('shared');
@@ -134,12 +134,12 @@ describe('resolveCredentials precedence', () => {
 
   it('resolves each field independently', async () => {
     process.env.DECKFLOW_API_KEY = 'env-key';
-    await writeDeckops({ spaceId: 'deckops-space' });
+    await writeDeckflow({ spaceId: 'shared-space' });
     const resolved = await resolveCredentials();
     expect(resolved.apiKey).toBe('env-key');
-    expect(resolved.spaceId).toBe('deckops-space');
+    expect(resolved.spaceId).toBe('shared-space');
     expect(resolved.sources.apiKey).toBe('env:DECKFLOW_API_KEY');
-    expect(resolved.sources.spaceId).toBe('file:~/.deckops/config.json');
+    expect(resolved.sources.spaceId).toBe('file:~/.deckflow/credentials');
   });
 
   it('ignores blank environment values', async () => {
@@ -202,9 +202,9 @@ describe('describeCredentialOrigin', () => {
     expect(describeCredentialOrigin(await resolveCredentials())).toBeUndefined();
   });
 
-  it('names the DeckOps config a token was inherited from', async () => {
-    await writeDeckops({ token: 'stale-deckops-token' });
-    expect(describeCredentialOrigin(await resolveCredentials())).toBe('token from ~/.deckops/config.json');
+  it('names the shared config a token was inherited from', async () => {
+    await writeDeckflow({ token: 'stale-shared-token' });
+    expect(describeCredentialOrigin(await resolveCredentials())).toBe('token from ~/.deckflow/credentials');
   });
 
   it('names the shared credential file', async () => {
@@ -219,9 +219,9 @@ describe('describeCredentialOrigin', () => {
 
   it('names both when a key and a token are sent together', async () => {
     process.env.DECKFLOW_API_KEY = 'env-key';
-    await writeDeckops({ token: 'deckops-token' });
+    await writeDeckflow({ token: 'shared-token' });
     expect(describeCredentialOrigin(await resolveCredentials())).toBe(
-      'API key from $DECKFLOW_API_KEY and token from ~/.deckops/config.json'
+      'API key from $DECKFLOW_API_KEY and token from ~/.deckflow/credentials'
     );
   });
 

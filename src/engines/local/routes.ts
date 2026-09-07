@@ -18,7 +18,7 @@ const LOCAL_PDF_IMAGE_CAVEAT =
 /**
  * Community engine capability table.
  *
- * It deliberately stays separate from the DeckOps table: selecting `local`
+ * It deliberately stays separate from the DeckTools table: selecting `local`
  * is a privacy boundary, so absence here must never become an implicit cloud
  * fallback.
  */

@@ -5,7 +5,6 @@ import {
   CONFIG_KEYS,
   configPath,
   credentialsPath,
-  deckopsConfigPath,
   displayPath,
   isConfigKey,
   maskSecret,
@@ -27,7 +26,7 @@ export function registerConfigCommands(program: Command, modeOf: (cmd: Command) 
     .action(async function (this: Command, key: string, value: string) {
       const reporter = new Reporter(modeOf(this));
       try {
-        // The API key belongs in the shared file so DeckHTML and DeckOps see it;
+        // The API key belongs in the shared file so DeckHTML and DeckTools see it;
         // render defaults belong to DeckRender alone.
         if (key === API_KEY) {
           const file = await writeSharedCredentials({ apiKey: value });
@@ -112,7 +111,6 @@ export function registerConfigCommands(program: Command, modeOf: (cmd: Command) 
         lines.push('', chalk.bold('Files'));
         lines.push(`  shared credentials  ${displayPath(credentialsPath())}`);
         lines.push(`  render defaults     ${displayPath(configPath())}`);
-        lines.push(`  deckops (read-only) ${displayPath(deckopsConfigPath())}`);
 
         reporter.say(lines.join('\n'), {
           credentials: {
@@ -126,7 +124,6 @@ export function registerConfigCommands(program: Command, modeOf: (cmd: Command) 
           files: {
             credentials: credentialsPath(),
             config: configPath(),
-            deckops: deckopsConfigPath(),
           },
         });
       } catch (error) {
@@ -142,12 +139,10 @@ export function registerConfigCommands(program: Command, modeOf: (cmd: Command) 
         [
           `shared credentials  ${displayPath(credentialsPath())}`,
           `render defaults     ${displayPath(configPath())}`,
-          `deckops (read-only) ${displayPath(deckopsConfigPath())}`,
         ].join('\n'),
         {
           credentials: credentialsPath(),
           config: configPath(),
-          deckops: deckopsConfigPath(),
         }
       );
     });

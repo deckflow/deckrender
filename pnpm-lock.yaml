@@ -8,9 +8,9 @@ importers:
 
   .:
     dependencies:
-      '@deckops/sdk':
-        specifier: 0.7.3
-        version: 0.7.3
+      '@deckflow/decktools-sdk':
+        specifier: 1.0.0
+        version: 1.0.0
       '@types/node':
         specifier: ^20.10.0
         version: 20.19.43
@@ -100,6 +100,10 @@ packages:
   '@bcoe/v8-coverage@0.2.3':
     resolution: {integrity: sha512-0hYQ8SB4Db5zvZB4axdMHGwEaQjkZzFjQiN9LVYvIFB2nSUHW9tYpxWriPrWDASIxiaXax83REcLxuSdnGPZtw==}
 
+  '@deckflow/decktools-sdk@1.0.0':
+    resolution: {integrity: sha512-Gp2zhUqR9nnV8/l30Vrvje/ZZLBJpFg4NbB7JewU2SVRFmYHDp38IW2p6uCRoq2gpAhYamqNa62faLtxI/t18g==}
+    engines: {node: '>=18.0.0'}
+
   '@deckflow/office2html-darwin-arm64@0.2.1':
     resolution: {integrity: sha512-tg1ipuCRpbnuiaAScsmJUg6bggzHxaG/tBOlad/9ShtqvhGgLnahQ88HfokB7p6YfJu9gpRX0e3S0zQpaENplg==}
     cpu: [arm64]
@@ -123,10 +127,6 @@ packages:
   '@deckflow/office2html@0.2.1':
     resolution: {integrity: sha512-jMYzTIpmuzs7rf46ACx1Ew4AoqP3bYuEF5oLuUjRHz6HGrAH+YGzb7ZfMERUbDJpVEOYrCSuU/rR6IUGqTg9pA==}
     hasBin: true
-
-  '@deckops/sdk@0.7.3':
-    resolution: {integrity: sha512-RBnsj/ynwz8PzMaPiPXEUKYdAvYD4FlcNr8ZggIJbmXYzVLWnqNPad6vaz6DExZus6VmykpxXL7ZdNRKxRVjpw==}
-    engines: {node: '>=18.0.0'}
 
   '@esbuild/aix-ppc64@0.21.5':
     resolution: {integrity: sha512-1SDgH6ZSPTlggy1yI6+Dbkiz8xzpHJEVAlF/AM1tHPLsf5STom9rwtjE4hKAF20FfXXNTFqEYXyJNWh1GiZedQ==}
@@ -2080,6 +2080,15 @@ snapshots:
 
   '@bcoe/v8-coverage@0.2.3': {}
 
+  '@deckflow/decktools-sdk@1.0.0':
+    dependencies:
+      axios: 1.19.0
+      eventsource-parser: 1.1.2
+      p-limit: 5.0.0
+    transitivePeerDependencies:
+      - debug
+      - supports-color
+
   '@deckflow/office2html-darwin-arm64@0.2.1':
     optional: true
 
@@ -2099,15 +2108,6 @@ snapshots:
       '@deckflow/office2html-linux-x64': 0.2.1
       '@deckflow/office2html-win32-x64': 0.2.1
     optional: true
-
-  '@deckops/sdk@0.7.3':
-    dependencies:
-      axios: 1.19.0
-      eventsource-parser: 1.1.2
-      p-limit: 5.0.0
-    transitivePeerDependencies:
-      - debug
-      - supports-color
 
   '@esbuild/aix-ppc64@0.21.5':
     optional: true

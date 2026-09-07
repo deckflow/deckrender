@@ -3,8 +3,8 @@ import type { RenderArtifact } from '../types.js';
 /**
  * Normalize a `tasks.down()` payload into ordered artifacts.
  *
- * DeckOps returns three different shapes depending on the task
- * (see DeckTaskTypeResult in @deckops/sdk):
+ * DeckTools returns three different shapes depending on the task
+ * (see DeckTaskTypeResult in @deckflow/decktools-sdk):
  *
  *   ConvertFileResult[]  — multi-frame converters (ppt2image, pdf2image, ...)
  *   FileResult           — single-file converters (html2png, convertWebp, ...)

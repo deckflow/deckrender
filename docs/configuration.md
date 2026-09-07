@@ -25,7 +25,10 @@ Both write to the shared file. Writes are merged, so keys another tool stored th
 If your machine is already configured for another DeckFlow tool, DeckRender finds it:
 
 - `DECKHTML_API_KEY` in the environment
-- a token stored by `deckops login` in `~/.deckops/config.json` (read-only — DeckRender never writes there)
+- a token stored by `decktools login` in the shared `~/.deckflow/credentials`
+
+Legacy `~/.deckops/config.json` is no longer a runtime fallback. Run the new
+DeckOps `config migrate` once to merge legacy credentials before switching.
 
 ## Resolution order
 
@@ -36,8 +39,7 @@ Each field resolves independently, first match wins:
 | 1   | Explicit argument (`--api-key`, `--token`, `--api-base`) |
 | 2   | Environment variables                                    |
 | 3   | `~/.deckflow/credentials`                                |
-| 4   | `~/.deckops/config.json` (read-only)                     |
-| 5   | Built-in default                                         |
+| 4   | Built-in default                                         |
 
 Environment variables, in order:
 
@@ -61,7 +63,7 @@ $ deckrender config list
 Credentials
   api-key   sk-a************wxyz  (env:DECKHTML_API_KEY)
   token     (unset)
-  space-id  space_abc             (file:~/.deckops/config.json)
+  space-id  space_abc             (file:~/.deckflow/credentials)
   api-base  https://app.deckflow.com/v1  (default)
 
 Render defaults
@@ -72,7 +74,6 @@ Render defaults
 Files
   shared credentials  ~/.deckflow/credentials
   render defaults     ~/.deckrender/config.json
-  deckops (read-only) ~/.deckops/config.json
 ```
 
 Secrets are always masked. `--json` gives the same data for scripts.
@@ -168,12 +169,12 @@ Rules for implementors:
 
 1. **Read-merge-write.** Never rewrite the file wholesale. Unknown keys belong to another tool and must survive.
 2. **Tolerate malformed content.** A corrupt or partially written file resolves to "no credentials", never a crash.
-3. **Never write another tool's config.** `~/.deckops/config.json` is readable as a fallback but is owned by the DeckOps CLI.
+3. **Never read or write another tool's product config.** Shared credentials are jointly owned; product preferences are separate.
 4. **Keep tool-specific settings out.** Render defaults and the like belong in the tool's own directory.
 
 ### Login flow
 
-Byte-for-byte compatible with the DeckOps CLI, so a token obtained by any tool works in all of them:
+Byte-for-byte compatible with the DeckTools CLI, so a token obtained by any tool works in all of them:
 
 ```
 GET {apiBase minus /v1}/cli/auth?redirect_url=http://localhost:3737
